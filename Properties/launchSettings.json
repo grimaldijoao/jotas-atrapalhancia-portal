@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "JotasTwitchPortal": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}
