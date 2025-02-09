@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using HeadlessAtrapalhanciaHandler;
+using Newtonsoft.Json;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
 using TwitchLib.Api;
@@ -10,14 +12,12 @@ using TwitchLib.Client.Models;
 using TwitchLib.Communication.Clients;
 using TwitchLib.Communication.Models;
 using TwitchLib.PubSub;
-using WebSocketSharp.Server;
+using WebSocketSharp;
 
 namespace JotasTwitchPortal
 {
     public class Bot
     {
-        public static Bot CurrentBot;
-
         string clientId = "gp762nuuoqcoxypju8c569th9wz7q5";
         string userId = "235332563"; //broadcaster id
         string bot_access_token = File.ReadAllText("bot_access_token.txt");
@@ -26,19 +26,18 @@ namespace JotasTwitchPortal
         TwitchPubSub clientPubSub;
         TwitchAPI api;
 
-        string broadcasterId;
-        string moderatorId;
+        private WebsocketAtrapalhanciasServer SocketServer; //TODO depreciar lentamente pra não expor essa camada
+        private WebSocket BroadcasterSocket;
+        private Dictionary<string, User> ConnectedUsers = new Dictionary<string, User>();
 
-        private WebSocketServer socketServer;
-
-        public Bot(WebSocketServer _socketServer)
+        public Bot(WebsocketAtrapalhanciasServer socketServer)
         {
-            socketServer = _socketServer;
-            CurrentBot = this;
+            SocketServer = socketServer;
         }
 
         public void Connect()
         {
+            var channel = "umjotas";
             ConnectionCredentials credentials = new ConnectionCredentials("umbotas", bot_access_token);
             var clientOptions = new ClientOptions
             {
@@ -48,7 +47,7 @@ namespace JotasTwitchPortal
 
             WebSocketClient customClient = new WebSocketClient(clientOptions);
             client = new TwitchClient(customClient);
-            client.Initialize(credentials, "umjotas");
+            client.Initialize(credentials, channel);
 
             api = new TwitchAPI();
 
@@ -73,24 +72,50 @@ namespace JotasTwitchPortal
             clientPubSub.Connect();
         }
 
-        Dictionary<string, string> TwitchRewardsAtrapalhancias = new Dictionary<string, string>();
+        private void TryFirstJoin(string username)
+        {
+            if (ConnectedUsers.TryAdd(username, new User(BroadcasterSocket, username)))
+            {
+                var userData = api.Helix.Users.GetUsersAsync(logins: new List<string>() { username }).GetAwaiter().GetResult().Users[0];
+                Console.WriteLine(username, "portou");
+                SocketServer.WebSocketServices.Broadcast(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
+                {
+                    username = userData.DisplayName,
+                    profile_pic = userData.ProfileImageUrl,
+                    event_name = "porta"
+                })));
+            }
+        }
+
+        ConcurrentDictionary<string, string> TwitchRewardsAtrapalhancias = new ConcurrentDictionary<string, string>();
 
         public void CreateRedeemRewards(Dictionary<string, CreateCustomRewardsRequest> atrapalhanciaRewards)
         {
             var rewards = api.Helix.ChannelPoints.GetCustomRewardAsync(userId, null, true, access_token).GetAwaiter().GetResult();
 
+            var tasks = new List<Task>();
+
             foreach(var reward in rewards.Data)
             {
-                api.Helix.ChannelPoints.DeleteCustomRewardAsync(userId, reward.Id, access_token).GetAwaiter().GetResult();
+                tasks.Add(
+                    api.Helix.ChannelPoints.DeleteCustomRewardAsync(userId, reward.Id, access_token)
+                );
             }
+
+            Task.WaitAll(tasks.ToArray());
+            tasks.Clear();
 
             foreach (var reward in atrapalhanciaRewards)
             {
-                TwitchRewardsAtrapalhancias.Add(
-                    api.Helix.ChannelPoints.CreateCustomRewardsAsync(userId, reward.Value, access_token).GetAwaiter().GetResult().Data.First().Id,
-                    reward.Key
+                tasks.Add(
+                    api.Helix.ChannelPoints.CreateCustomRewardsAsync(userId, reward.Value, access_token).ContinueWith((customReward) =>
+                    {
+                        TwitchRewardsAtrapalhancias[customReward.Result.Data.First().Id] = reward.Key;
+                    })
                 );
             }
+
+            Task.WaitAll(tasks.ToArray());
         }
 
         private void ClientPubSub_OnPubSubServiceConnected(object sender, EventArgs e)
@@ -105,7 +130,7 @@ namespace JotasTwitchPortal
             string atrapalhancia;
             if(TwitchRewardsAtrapalhancias.TryGetValue(e.RewardRedeemed.Redemption.Reward.Id, out atrapalhancia))
             {
-                socketServer.WebSocketServices.Broadcast($"atrapalhancia/{atrapalhancia}");
+                BroadcasterSocket.Send($"atrapalhancia/{atrapalhancia}");
             }
 
             if (e.RewardRedeemed.Redemption.Reward.Title == "Deletar coisas")
@@ -124,68 +149,53 @@ namespace JotasTwitchPortal
         }
 
         private void Client_OnConnected(object sender, OnConnectedArgs e)
+        {        
+
+        }
+
+        private void Client_OnJoinedChannel(object sender, OnJoinedChannelArgs e)
         {
-            socketServer.WebSocketServices.Broadcast(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
+            var userData = api.Helix.Users.GetUsersAsync(logins: new List<string>() { e.Channel, "umbotas" }).GetAwaiter().GetResult().Users;
+
+            SocketServer.WebSocketServices.Broadcast(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
             {
-                username = "umjotas",
+                username = e.Channel,
                 profile_pic = "https://static-cdn.jtvnw.net/jtv_user_pictures/f2ce0467-b3d6-4780-927a-8c38cd0bed0f-profile_image-70x70.png",
                 event_name = "porta"
             })));
-            Console.WriteLine($"Connected to {e.AutoJoinChannel}");
-        }
 
-        HashSet<string> UniqueUsers = new HashSet<string>();
-        private void Client_OnJoinedChannel(object sender, OnJoinedChannelArgs e)
-        {
-            var userData = api.Helix.Users.GetUsersAsync(logins: new List<string>() { "umjotas", "umbotas" }).GetAwaiter().GetResult().Users;
-            broadcasterId = userData[0].Id;
-            moderatorId = userData[1].Id;
+            Console.WriteLine($"Connected to twitch channel {e.Channel}!");
 
-            client.SendMessage("umjotas", "🤖🤝👽");
+            SocketServer.AddRoom(e.Channel, (sender, game) =>
+            {
+                var service = (GameService)sender;
+                BroadcasterSocket = service.Context.WebSocket;
+
+                var rewards = new TwitchAtrapalhanciaBuilder().BuildRewardsFromFile(Environment.CurrentDirectory + $"/Atrapalhancias/{game}.dll");
+                CreateRedeemRewards(rewards);
+            });
+
+            client.SendMessage(e.Channel, "🤖🤝👽");
         }
 
         private void Client_OnMessageReceived(object sender, OnMessageReceivedArgs e)
         {
-            if (UniqueUsers.Add(e.ChatMessage.Username))
-            {
-                var userData = api.Helix.Users.GetUsersAsync(logins: new List<string>() { e.ChatMessage.Username }).GetAwaiter().GetResult().Users[0];
-                Console.WriteLine(e.ChatMessage.Username, "portou");
-                socketServer.WebSocketServices.Broadcast(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
-                {
-                    username = userData.DisplayName,
-                    profile_pic = userData.ProfileImageUrl,
-                    event_name = "porta"
-                })));
-            }
+            TryFirstJoin(e.ChatMessage.Username);
         }
 
         private void Client_OnUserJoined(object sender, OnUserJoinedArgs e)
         {
-            if (UniqueUsers.Add(e.Username))
-            {
-                var userData = api.Helix.Users.GetUsersAsync(logins: new List<string>() { e.Username }).GetAwaiter().GetResult().Users[0];
-                Console.WriteLine(e.Username, "portou");
-                socketServer.WebSocketServices.Broadcast(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
-                {
-                    username = userData.DisplayName,
-                    profile_pic = userData.ProfileImageUrl,
-                    event_name = "porta"
-                })));
-            }
+            TryFirstJoin(e.Username);
         }
 
         private void Client_OnWhisperReceived(object sender, OnWhisperReceivedArgs e)
         {
-            if (e.WhisperMessage.Username == "my_friend")
-                client.SendWhisper(e.WhisperMessage.Username, "Hey! Whispers are so cool!!");
+
         }
 
         private void Client_OnNewSubscriber(object sender, OnNewSubscriberArgs e)
         {
-            if (e.Subscriber.SubscriptionPlan == SubscriptionPlan.Prime)
-                client.SendMessage(e.Channel, $"Welcome {e.Subscriber.DisplayName} to the substers! You just earned 500 points! So kind of you to use your Twitch Prime on this channel!");
-            else
-                client.SendMessage(e.Channel, $"Welcome {e.Subscriber.DisplayName} to the substers! You just earned 500 points!");
+            
         }
     }
 }
