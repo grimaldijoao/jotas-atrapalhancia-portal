@@ -6,7 +6,6 @@ using System.Text;
 using TwitchLib.Api;
 using TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward;
 using TwitchLib.Client;
-using TwitchLib.Client.Enums;
 using TwitchLib.Client.Events;
 using TwitchLib.Client.Models;
 using TwitchLib.Communication.Clients;
@@ -16,8 +15,11 @@ using WebSocketSharp;
 
 namespace JotasTwitchPortal
 {
+    //TODO renomear e fazer os bots do renejotas
     public class Bot
     {
+        private WebSocket BroadcasterSocket = null;
+
         string clientId = "gp762nuuoqcoxypju8c569th9wz7q5";
         string userId = "235332563"; //broadcaster id
         string bot_access_token = File.ReadAllText("bot_access_token.txt");
@@ -27,10 +29,9 @@ namespace JotasTwitchPortal
         TwitchAPI api;
 
         private WebsocketAtrapalhanciasServer SocketServer; //TODO depreciar lentamente pra não expor essa camada
-        private WebSocket BroadcasterSocket;
         private Dictionary<string, User> ConnectedUsers = new Dictionary<string, User>();
 
-        public Bot(WebsocketAtrapalhanciasServer socketServer)
+        public Bot(ref WebsocketAtrapalhanciasServer socketServer)
         {
             SocketServer = socketServer;
         }
@@ -72,19 +73,27 @@ namespace JotasTwitchPortal
             clientPubSub.Connect();
         }
 
-        private void TryFirstJoin(string username)
+        private User TryFirstJoin(string username)
         {
-            if (ConnectedUsers.TryAdd(username, new User(BroadcasterSocket, username)))
+            if(ConnectedUsers.ContainsKey(username))
             {
-                var userData = api.Helix.Users.GetUsersAsync(logins: new List<string>() { username }).GetAwaiter().GetResult().Users[0];
-                Console.WriteLine(username, "portou");
-                SocketServer.WebSocketServices.Broadcast(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
-                {
-                    username = userData.DisplayName,
-                    profile_pic = userData.ProfileImageUrl,
-                    event_name = "porta"
-                })));
+                return ConnectedUsers[username];
             }
+
+            var userData = api.Helix.Users.GetUsersAsync(logins: new List<string>() { username }).GetAwaiter().GetResult().Users[0];
+            Console.WriteLine(username, "portou");
+            SocketServer.WebSocketServices.Broadcast(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
+            {
+                username = userData.DisplayName,
+                profile_pic = userData.ProfileImageUrl,
+                event_name = "porta"
+            })));
+
+            var user = new User(ref BroadcasterSocket, username, userData.ProfileImageUrl);
+
+            ConnectedUsers[username] = user;
+
+            return user;
         }
 
         ConcurrentDictionary<string, string> TwitchRewardsAtrapalhancias = new ConcurrentDictionary<string, string>();
@@ -128,9 +137,27 @@ namespace JotasTwitchPortal
         private void ClientPubSub_OnChatRewardRedeemed(object? sender, TwitchLib.PubSub.Events.OnChannelPointsRewardRedeemedArgs e)
         {
             string atrapalhancia;
+            User user;
+
             if(TwitchRewardsAtrapalhancias.TryGetValue(e.RewardRedeemed.Redemption.Reward.Id, out atrapalhancia))
             {
-                BroadcasterSocket.Send($"atrapalhancia/{atrapalhancia}");
+                if (ConnectedUsers.TryGetValue(e.RewardRedeemed.Redemption.User.Login, out user))
+                {
+                    user.Atrapalhate(TwitchRewardsAtrapalhancias[e.RewardRedeemed.Redemption.Reward.Id]);
+                }
+                else
+                {
+                    user = TryFirstJoin(e.RewardRedeemed.Redemption.User.Login);
+                    user.Atrapalhate(TwitchRewardsAtrapalhancias[e.RewardRedeemed.Redemption.Reward.Id]);
+                }
+
+                //TODO sistema de verdade
+                if(e.RewardRedeemed.Redemption.Reward.Title == "Nao pode pular")
+                {
+                    SocketServer.WebSocketServices["/channel/umjotas/overlay"].Sessions.Broadcast(Encoding.UTF8.GetBytes(@"
+                        {""event_name"": ""jumpTimer"", ""label"": ""Não pode pular!"", ""seconds"": 5}
+                    "));
+                }
             }
 
             if (e.RewardRedeemed.Redemption.Reward.Title == "Deletar coisas")
@@ -168,7 +195,7 @@ namespace JotasTwitchPortal
 
             SocketServer.AddRoom(e.Channel, (sender, game) =>
             {
-                var service = (GameService)sender;
+                GameService service = sender;
                 BroadcasterSocket = service.Context.WebSocket;
 
                 var rewards = new TwitchAtrapalhanciaBuilder().BuildRewardsFromFile(Environment.CurrentDirectory + $"/Atrapalhancias/{game}.dll");

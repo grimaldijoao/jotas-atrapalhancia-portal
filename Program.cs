@@ -9,10 +9,10 @@ namespace JotasTwitchPortal
             var socketManager = new WebSocketManager();
             socketManager.Initialize();
 
-            var bot = new Bot(socketManager.server);
+            var bot = new Bot(ref socketManager.server);
             bot.Connect();
 
-            HttpServer.Run(socketManager.server);
+            HttpServer.Run(ref socketManager.server);
 
             Console.WriteLine("🧙 Portal aberto! 🧙");
             Console.ReadLine();
