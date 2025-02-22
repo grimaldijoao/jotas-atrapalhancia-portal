@@ -11,14 +11,13 @@ using TwitchLib.Client.Models;
 using TwitchLib.Communication.Clients;
 using TwitchLib.Communication.Models;
 using TwitchLib.PubSub;
-using WebSocketSharp;
 
 namespace JotasTwitchPortal
 {
     //TODO renomear e fazer os bots do renejotas
     public class Bot
     {
-        private WebSocket BroadcasterSocket = null;
+        private string Channel;
 
         string clientId = "gp762nuuoqcoxypju8c569th9wz7q5";
         string userId = "235332563"; //broadcaster id
@@ -31,14 +30,14 @@ namespace JotasTwitchPortal
         private WebsocketAtrapalhanciasServer SocketServer; //TODO depreciar lentamente pra não expor essa camada
         private Dictionary<string, User> ConnectedUsers = new Dictionary<string, User>();
 
-        public Bot(ref WebsocketAtrapalhanciasServer socketServer)
+        public Bot(ref WebsocketAtrapalhanciasServer socketServer, string channel)
         {
+            Channel = channel;
             SocketServer = socketServer;
         }
 
         public void Connect()
         {
-            var channel = "umjotas";
             ConnectionCredentials credentials = new ConnectionCredentials("umbotas", bot_access_token);
             var clientOptions = new ClientOptions
             {
@@ -48,7 +47,7 @@ namespace JotasTwitchPortal
 
             WebSocketClient customClient = new WebSocketClient(clientOptions);
             client = new TwitchClient(customClient);
-            client.Initialize(credentials, channel);
+            client.Initialize(credentials, Channel);
 
             api = new TwitchAPI();
 
@@ -82,14 +81,14 @@ namespace JotasTwitchPortal
 
             var userData = api.Helix.Users.GetUsersAsync(logins: new List<string>() { username }).GetAwaiter().GetResult().Users[0];
             Console.WriteLine(username, "portou");
-            SocketServer.WebSocketServices.Broadcast(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
+            SocketServer.WebSocketServices["/channel/umjotas/overlay"].Sessions.Broadcast(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
             {
                 username = userData.DisplayName,
                 profile_pic = userData.ProfileImageUrl,
                 event_name = "porta"
             })));
 
-            var user = new User(ref BroadcasterSocket, username, userData.ProfileImageUrl);
+            var user = new User(username, userData.ProfileImageUrl);
 
             ConnectedUsers[username] = user;
 
@@ -184,7 +183,7 @@ namespace JotasTwitchPortal
         {
             var userData = api.Helix.Users.GetUsersAsync(logins: new List<string>() { e.Channel, "umbotas" }).GetAwaiter().GetResult().Users;
 
-            SocketServer.WebSocketServices.Broadcast(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
+            SocketServer.WebSocketServices["/channel/umjotas/overlay"].Sessions.Broadcast(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
             {
                 username = e.Channel,
                 profile_pic = "https://static-cdn.jtvnw.net/jtv_user_pictures/f2ce0467-b3d6-4780-927a-8c38cd0bed0f-profile_image-70x70.png",
@@ -193,14 +192,14 @@ namespace JotasTwitchPortal
 
             Console.WriteLine($"Connected to twitch channel {e.Channel}!");
 
-            SocketServer.AddRoom(e.Channel, (sender, game) =>
-            {
-                GameService service = sender;
-                BroadcasterSocket = service.Context.WebSocket;
-
-                var rewards = new TwitchAtrapalhanciaBuilder().BuildRewardsFromFile(Environment.CurrentDirectory + $"/Atrapalhancias/{game}.dll");
-                CreateRedeemRewards(rewards);
-            });
+            //SocketServer.AddRoom(e.Channel, (sender, game) =>
+            //{
+            //    GameService service = sender;
+            //    BroadcasterSocket = service.Context.WebSocket;
+            //
+            //    var rewards = new TwitchAtrapalhanciaBuilder().BuildRewardsFromFile(Environment.CurrentDirectory + $"/Atrapalhancias/{game}.dll");
+            //    CreateRedeemRewards(rewards);
+            //});
 
             client.SendMessage(e.Channel, "🤖🤝👽");
         }

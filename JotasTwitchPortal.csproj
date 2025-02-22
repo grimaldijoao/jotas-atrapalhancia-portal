@@ -31,6 +31,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="websocket-sharp">
+      <HintPath>..\websocket-sharp-master\websocket-sharp\bin\Release\net452\websocket-sharp.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="access_token.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
