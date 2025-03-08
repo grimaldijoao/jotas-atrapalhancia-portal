@@ -1,4 +1,6 @@
-﻿using HeadlessAtrapalhanciaHandler;
+﻿using Headless.AtrapalhanciaHandler;
+using Headless.AtrapalhanciaHandler.Shared;
+using ScreenshotHandler;
 using TwitchLib.Api.Helix.Models.Games;
 
 namespace JotasTwitchPortal
@@ -8,7 +10,7 @@ namespace JotasTwitchPortal
         static void Main(string[] args)
         {
             var channelName = "umjotas";
-            var socketManager = new WebSocketManager();
+            var socketManager = new WebSocketServerManager();
 
             var bot = new Bot(ref socketManager.server, channelName);
             bot.Connect();
@@ -16,17 +18,21 @@ namespace JotasTwitchPortal
             socketManager.Initialize(channelName, (sender, gameName) => //TODO race condition?
             {
                 GameService service = sender;
-                External.BroadcasterSocket = service.Context.WebSocket;
+                External.SendToBroadcaster = socketManager.server.WebSocketServices[$"/channel/{channelName}/"].Sessions.Broadcast;
 
                 var rewards = new TwitchAtrapalhanciaBuilder().BuildRewardsFromFile(Environment.CurrentDirectory + $"/Atrapalhancias/{gameName}.dll");
                 bot.CreateRedeemRewards(rewards);
+            }, (sender) =>
+            {
+                External.SendToOverlay = socketManager.server.WebSocketServices[$"/channel/{channelName}/overlay/"].Sessions.Broadcast;
             });
 
 
+            var screenshotListener = new ScreenshotListener();
+            screenshotListener.Init();
 
             HttpServer.Run(ref socketManager.server);
 
-            Console.WriteLine("🧙 Portal aberto! 🧙");
             Console.ReadLine();
 
         }

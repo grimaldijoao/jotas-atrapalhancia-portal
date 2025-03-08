@@ -1,4 +1,6 @@
-﻿using HeadlessAtrapalhanciaHandler;
+﻿using Headless.AtrapalhanciaHandler;
+using Headless.AtrapalhanciaHandler.Shared;
+using InvasionHandler;
 using Newtonsoft.Json;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -17,7 +19,7 @@ namespace JotasTwitchPortal
     //TODO renomear e fazer os bots do renejotas
     public class Bot
     {
-        private string Channel;
+        private string ChannelName;
 
         string clientId = "gp762nuuoqcoxypju8c569th9wz7q5";
         string userId = "235332563"; //broadcaster id
@@ -27,12 +29,14 @@ namespace JotasTwitchPortal
         TwitchPubSub clientPubSub;
         TwitchAPI api;
 
+        private AlienInvasion Invasion = new AlienInvasion(); //TODO module adder instead of everyone having this? lol
+
         private WebsocketAtrapalhanciasServer SocketServer; //TODO depreciar lentamente pra não expor essa camada
         private Dictionary<string, User> ConnectedUsers = new Dictionary<string, User>();
 
         public Bot(ref WebsocketAtrapalhanciasServer socketServer, string channel)
         {
-            Channel = channel;
+            ChannelName = channel;
             SocketServer = socketServer;
         }
 
@@ -47,7 +51,7 @@ namespace JotasTwitchPortal
 
             WebSocketClient customClient = new WebSocketClient(clientOptions);
             client = new TwitchClient(customClient);
-            client.Initialize(credentials, Channel);
+            client.Initialize(credentials, ChannelName);
 
             api = new TwitchAPI();
 
@@ -81,7 +85,7 @@ namespace JotasTwitchPortal
 
             var userData = api.Helix.Users.GetUsersAsync(logins: new List<string>() { username }).GetAwaiter().GetResult().Users[0];
             Console.WriteLine(username, "portou");
-            SocketServer.WebSocketServices["/channel/umjotas/overlay"].Sessions.Broadcast(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
+            SocketServer.WebSocketServices[$"/channel/{ChannelName}/overlay"].Sessions.Broadcast(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
             {
                 username = userData.DisplayName,
                 profile_pic = userData.ProfileImageUrl,
@@ -153,7 +157,7 @@ namespace JotasTwitchPortal
                 //TODO sistema de verdade
                 if(e.RewardRedeemed.Redemption.Reward.Title == "Nao pode pular")
                 {
-                    SocketServer.WebSocketServices["/channel/umjotas/overlay"].Sessions.Broadcast(Encoding.UTF8.GetBytes(@"
+                    External.SendToOverlay(Encoding.UTF8.GetBytes(@"
                         {""event_name"": ""jumpTimer"", ""label"": ""Não pode pular!"", ""seconds"": 5}
                     "));
                 }
@@ -183,12 +187,12 @@ namespace JotasTwitchPortal
         {
             var userData = api.Helix.Users.GetUsersAsync(logins: new List<string>() { e.Channel, "umbotas" }).GetAwaiter().GetResult().Users;
 
-            SocketServer.WebSocketServices["/channel/umjotas/overlay"].Sessions.Broadcast(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
-            {
-                username = e.Channel,
-                profile_pic = "https://static-cdn.jtvnw.net/jtv_user_pictures/f2ce0467-b3d6-4780-927a-8c38cd0bed0f-profile_image-70x70.png",
-                event_name = "porta"
-            })));
+            //External.SendToOverlay(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
+            //{
+            //    username = e.Channel,
+            //    profile_pic = "https://static-cdn.jtvnw.net/jtv_user_pictures/f2ce0467-b3d6-4780-927a-8c38cd0bed0f-profile_image-70x70.png",
+            //    event_name = "porta"
+            //})));
 
             Console.WriteLine($"Connected to twitch channel {e.Channel}!");
 
@@ -206,6 +210,17 @@ namespace JotasTwitchPortal
 
         private void Client_OnMessageReceived(object sender, OnMessageReceivedArgs e)
         {
+            var messageSplit = e.ChatMessage.Message.ToLower().Split(' ');
+            foreach (var word in messageSplit)
+            {
+                if(word.Contains("rene"))
+                {
+                    Console.WriteLine("Rene Mentioned!");
+                    Invasion.ReneMentioned();
+                    break;
+                }
+            }
+
             TryFirstJoin(e.ChatMessage.Username);
         }
 

@@ -5,7 +5,15 @@ VisualStudioVersion = 17.12.35707.178
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JotasTwitchPortal", "JotasTwitchPortal.csproj", "{023ACA1F-FED9-4BAA-A664-AB542E750F7C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HeadlessAtrapalhanciaHandler", "..\HeadlessAtrapalhanciaHandler\HeadlessAtrapalhanciaHandler.csproj", "{9FA12866-243F-4C6E-B86B-D80F45B6978C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AtrapalhanciaHandler", "..\HeadlessAtrapalhanciaHandler\AtrapalhanciaHandler.csproj", "{9FA12866-243F-4C6E-B86B-D80F45B6978C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Headless", "Headless", "{F49F68B0-1541-4BFB-84E2-C6AAA6B54D43}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InvasionHandler", "..\InvasionHandler\InvasionHandler.csproj", "{B53A4DCA-FE90-4CD9-895D-243A8EBB0A0E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "..\Shared\Shared.csproj", "{95BE018A-6CD1-46E1-B045-B58A98862946}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScreenshotHandler", "..\ScreenshotHandler\ScreenshotHandler.csproj", "{E8F3ED8A-AF60-4680-A52E-1D79FCBBA2AF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,8 +29,26 @@ Global
 		{9FA12866-243F-4C6E-B86B-D80F45B6978C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9FA12866-243F-4C6E-B86B-D80F45B6978C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9FA12866-243F-4C6E-B86B-D80F45B6978C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B53A4DCA-FE90-4CD9-895D-243A8EBB0A0E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B53A4DCA-FE90-4CD9-895D-243A8EBB0A0E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B53A4DCA-FE90-4CD9-895D-243A8EBB0A0E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B53A4DCA-FE90-4CD9-895D-243A8EBB0A0E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{95BE018A-6CD1-46E1-B045-B58A98862946}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{95BE018A-6CD1-46E1-B045-B58A98862946}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{95BE018A-6CD1-46E1-B045-B58A98862946}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{95BE018A-6CD1-46E1-B045-B58A98862946}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E8F3ED8A-AF60-4680-A52E-1D79FCBBA2AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E8F3ED8A-AF60-4680-A52E-1D79FCBBA2AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E8F3ED8A-AF60-4680-A52E-1D79FCBBA2AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E8F3ED8A-AF60-4680-A52E-1D79FCBBA2AF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{9FA12866-243F-4C6E-B86B-D80F45B6978C} = {F49F68B0-1541-4BFB-84E2-C6AAA6B54D43}
+		{B53A4DCA-FE90-4CD9-895D-243A8EBB0A0E} = {F49F68B0-1541-4BFB-84E2-C6AAA6B54D43}
+		{95BE018A-6CD1-46E1-B045-B58A98862946} = {F49F68B0-1541-4BFB-84E2-C6AAA6B54D43}
+		{E8F3ED8A-AF60-4680-A52E-1D79FCBBA2AF} = {F49F68B0-1541-4BFB-84E2-C6AAA6B54D43}
 	EndGlobalSection
 EndGlobal

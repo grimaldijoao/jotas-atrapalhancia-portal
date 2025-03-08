@@ -10,6 +10,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="susto.mp3" />
+  </ItemGroup>
+
+  <ItemGroup>
     <COMReference Include="WMPLib">
       <WrapperTool>tlbimp</WrapperTool>
       <VersionMinor>0</VersionMinor>
@@ -27,7 +31,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\HeadlessAtrapalhanciaHandler\HeadlessAtrapalhanciaHandler.csproj" />
+    <ProjectReference Include="..\HeadlessAtrapalhanciaHandler\AtrapalhanciaHandler.csproj" />
+    <ProjectReference Include="..\InvasionHandler\InvasionHandler.csproj" />
+    <ProjectReference Include="..\ScreenshotHandler\ScreenshotHandler.csproj" />
+    <ProjectReference Include="..\Shared\Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -45,9 +52,6 @@
     </None>
     <None Update="backspace.vbs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="susto.mp3">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
