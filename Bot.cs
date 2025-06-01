@@ -1,17 +1,21 @@
 ﻿using Headless.AtrapalhanciaHandler;
 using Headless.AtrapalhanciaHandler.Shared;
 using InvasionHandler;
+using JotasTwitchPortal.JSON;
 using Newtonsoft.Json;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
 using TwitchLib.Api;
+using TwitchLib.Api.Helix;
 using TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward;
+using TwitchLib.Api.Interfaces;
 using TwitchLib.Client;
 using TwitchLib.Client.Events;
 using TwitchLib.Client.Models;
 using TwitchLib.Communication.Clients;
 using TwitchLib.Communication.Models;
+using TwitchLib.EventSub.Websockets;
 using TwitchLib.PubSub;
 
 namespace JotasTwitchPortal
@@ -28,6 +32,8 @@ namespace JotasTwitchPortal
         TwitchClient client;
         TwitchPubSub clientPubSub;
         TwitchAPI api;
+
+        private readonly EventSubWebsocketClient _eventSubWebsocketClient;
 
         private AlienInvasion Invasion = new AlienInvasion(); //TODO module adder instead of everyone having this? lol
 
@@ -50,6 +56,10 @@ namespace JotasTwitchPortal
             };
 
             WebSocketClient customClient = new WebSocketClient(clientOptions);
+
+            customClient.OnData += CustomClient_OnData;
+            customClient.OnMessage += CustomClient_OnMessage;
+
             client = new TwitchClient(customClient);
             client.Initialize(credentials, ChannelName);
 
@@ -66,14 +76,33 @@ namespace JotasTwitchPortal
             client.OnNewSubscriber += Client_OnNewSubscriber;
             client.OnConnected += Client_OnConnected;
 
+
             client.Connect();
 
+            var eventSub = new EventSub();
+            eventSub.OnChatRewardRedeemed += EventSub_OnChatRewardRedeemed;
+            eventSub.Connect();
 
-            clientPubSub = new TwitchPubSub();
-            clientPubSub.OnPubSubServiceConnected += ClientPubSub_OnPubSubServiceConnected;
-            clientPubSub.OnChannelPointsRewardRedeemed += ClientPubSub_OnChatRewardRedeemed;
+            Task.Factory.StartNew(() =>
+            {
+                while (EventSub.SessionId == null)
+                {
+                    Task.Delay(500).Wait();
+                }
+                
+                var response = api.Helix.EventSub.CreateEventSubSubscriptionAsync("channel.channel_points_custom_reward_redemption.add", "1", new Dictionary<string, string>() { { "broadcaster_user_id", "235332563" } }, TwitchLib.Api.Core.Enums.EventSubTransportMethod.Websocket, EventSub.SessionId, null, null, clientId, access_token).GetAwaiter().GetResult();
+                
+            });
+        }
 
-            clientPubSub.Connect();
+        private void CustomClient_OnMessage(object? sender, TwitchLib.Communication.Events.OnMessageEventArgs e)
+        {
+            Console.WriteLine(e.Message);
+        }
+
+        private void CustomClient_OnData(object? sender, TwitchLib.Communication.Events.OnDataEventArgs e)
+        {
+            Console.WriteLine(e.Data);
         }
 
         private User TryFirstJoin(string username)
@@ -130,32 +159,25 @@ namespace JotasTwitchPortal
             Task.WaitAll(tasks.ToArray());
         }
 
-        private void ClientPubSub_OnPubSubServiceConnected(object sender, EventArgs e)
-        {
-            clientPubSub.ListenToChannelPoints(userId);
-            clientPubSub.SendTopics(access_token);
-            Console.WriteLine("Pubsub Abrido!");
-        }
-
-        private void ClientPubSub_OnChatRewardRedeemed(object? sender, TwitchLib.PubSub.Events.OnChannelPointsRewardRedeemedArgs e)
+        private void EventSub_OnChatRewardRedeemed(object sender, RewardEvent rewardEvent)
         {
             string atrapalhancia;
             User user;
 
-            if(TwitchRewardsAtrapalhancias.TryGetValue(e.RewardRedeemed.Redemption.Reward.Id, out atrapalhancia))
+            if(TwitchRewardsAtrapalhancias.TryGetValue(rewardEvent.Event.Reward.Id, out atrapalhancia))
             {
-                if (ConnectedUsers.TryGetValue(e.RewardRedeemed.Redemption.User.Login, out user))
+                if (ConnectedUsers.TryGetValue(rewardEvent.Event.UserLogin, out user))
                 {
-                    user.Atrapalhate(TwitchRewardsAtrapalhancias[e.RewardRedeemed.Redemption.Reward.Id]);
+                    user.Atrapalhate(TwitchRewardsAtrapalhancias[rewardEvent.Event.Reward.Id]);
                 }
                 else
                 {
-                    user = TryFirstJoin(e.RewardRedeemed.Redemption.User.Login);
-                    user.Atrapalhate(TwitchRewardsAtrapalhancias[e.RewardRedeemed.Redemption.Reward.Id]);
+                    user = TryFirstJoin(rewardEvent.Event.UserLogin);
+                    user.Atrapalhate(TwitchRewardsAtrapalhancias[rewardEvent.Event.Reward.Id]);
                 }
 
                 //TODO sistema de verdade
-                if(e.RewardRedeemed.Redemption.Reward.Title == "Nao pode pular")
+                if(rewardEvent.Event.Reward.Title == "Nao pode pular")
                 {
                     External.SendToOverlay(Encoding.UTF8.GetBytes(@"
                         {""event_name"": ""jumpTimer"", ""label"": ""Não pode pular!"", ""seconds"": 5}
@@ -163,7 +185,7 @@ namespace JotasTwitchPortal
                 }
             }
 
-            if (e.RewardRedeemed.Redemption.Reward.Title == "Deletar coisas")
+            if (rewardEvent.Event.Reward.Title == "Deletar coisas")
             {
                 Process scriptProc = new Process();
                 scriptProc.StartInfo.FileName = @"cscript";
