@@ -10,6 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Headless\**" />
+    <EmbeddedResource Remove="Headless\**" />
+    <None Remove="Headless\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="susto.mp3" />
   </ItemGroup>
 
@@ -31,10 +37,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\HeadlessAtrapalhanciaHandler\AtrapalhanciaHandler.csproj" />
-    <ProjectReference Include="..\InvasionHandler\InvasionHandler.csproj" />
-    <ProjectReference Include="..\ScreenshotHandler\ScreenshotHandler.csproj" />
-    <ProjectReference Include="..\Shared\Shared.csproj" />
+    <ProjectReference Include="Headless\AtrapalhanciaHandler\AtrapalhanciaHandler.csproj" />
+    <ProjectReference Include="Headless\InvasionHandler\InvasionHandler.csproj" />
+    <ProjectReference Include="Headless\ScreenshotHandler\ScreenshotHandler.csproj" />
+    <ProjectReference Include="Headless\Shared\Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
