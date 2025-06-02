@@ -7,6 +7,11 @@
     <Nullable>enable</Nullable>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
+    <Title>Jotas Twitch Portal</Title>
+    <Authors>jonhyfun</Authors>
+    <Company>Jotape Corporation</Company>
+    <PackageIcon>twitchportal.png</PackageIcon>
+    <ApplicationIcon>twitchportal.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -32,6 +37,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="twitchportal.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
     <PackageReference Include="TwitchLib" Version="3.5.3" />
   </ItemGroup>
@@ -45,7 +54,7 @@
 
   <ItemGroup>
     <Reference Include="websocket-sharp">
-      <HintPath>..\websocket-sharp-master\websocket-sharp\bin\Release\net452\websocket-sharp.dll</HintPath>
+      <HintPath>..\..\External\websocket-sharp-master\websocket-sharp\bin\Release\net452\websocket-sharp.dll</HintPath>
     </Reference>
   </ItemGroup>
 
@@ -58,6 +67,10 @@
     </None>
     <None Update="backspace.vbs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="twitchportal.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
 
