@@ -3,6 +3,7 @@ using Headless.AtrapalhanciaHandler.Shared;
 using InvasionHandler;
 using JotasTwitchPortal.JSON;
 using Newtonsoft.Json;
+using Shared;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
@@ -21,7 +22,7 @@ using TwitchLib.PubSub;
 namespace JotasTwitchPortal
 {
     //TODO renomear e fazer os bots do renejotas
-    public class Bot
+    public class TwitchPortal : ITwitchPortal
     {
         private string ChannelName;
 
@@ -40,7 +41,7 @@ namespace JotasTwitchPortal
         private WebsocketAtrapalhanciasServer SocketServer; //TODO depreciar lentamente pra não expor essa camada
         private Dictionary<string, User> ConnectedUsers = new Dictionary<string, User>();
 
-        public Bot(ref WebsocketAtrapalhanciasServer socketServer, string channel)
+        public TwitchPortal(ref WebsocketAtrapalhanciasServer socketServer, string channel)
         {
             ChannelName = channel;
             SocketServer = socketServer;
@@ -95,6 +96,11 @@ namespace JotasTwitchPortal
             });
         }
 
+        public void SendChatMessage(string message)
+        {
+            client.SendMessage(client.JoinedChannels.ElementAt(0), message);
+        }
+
         private void CustomClient_OnMessage(object? sender, TwitchLib.Communication.Events.OnMessageEventArgs e)
         {
             Console.WriteLine(e.Message);
@@ -133,19 +139,18 @@ namespace JotasTwitchPortal
         public void CreateRedeemRewards(Dictionary<string, CreateCustomRewardsRequest> atrapalhanciaRewards)
         {
             var rewards = api.Helix.ChannelPoints.GetCustomRewardAsync(userId, null, true, access_token).GetAwaiter().GetResult();
-
+            
             var tasks = new List<Task>();
-
+            
             foreach(var reward in rewards.Data)
             {
-                tasks.Add(
-                    api.Helix.ChannelPoints.DeleteCustomRewardAsync(userId, reward.Id, access_token)
-                );
+                api.Helix.ChannelPoints.DeleteCustomRewardAsync(userId, reward.Id, access_token).GetAwaiter().GetResult();
             }
 
             Task.WaitAll(tasks.ToArray());
-            tasks.Clear();
 
+            tasks.Clear();
+            
             foreach (var reward in atrapalhanciaRewards)
             {
                 tasks.Add(
@@ -155,7 +160,7 @@ namespace JotasTwitchPortal
                     })
                 );
             }
-
+            
             Task.WaitAll(tasks.ToArray());
         }
 
