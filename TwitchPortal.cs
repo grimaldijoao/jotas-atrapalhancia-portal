@@ -232,7 +232,15 @@ namespace JotasTwitchPortal
             //    CreateRedeemRewards(rewards);
             //});
 
-            client.SendMessage(e.Channel, "🤖🤝👽");
+            Task.Factory.StartNew(() =>
+            {
+                while (client.JoinedChannels.Count == 0)
+                {
+                    Task.Delay(500).Wait();
+                    //? I dont know why this occasionally happens, TwitchLib is sus...
+                }
+                SendChatMessage("🤖🤝👽");
+            });
         }
 
         private void Client_OnMessageReceived(object sender, OnMessageReceivedArgs e)
