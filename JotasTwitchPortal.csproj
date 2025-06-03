@@ -42,14 +42,15 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
-    <PackageReference Include="TwitchLib" Version="3.5.3" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="Headless\AtrapalhanciaHandler\AtrapalhanciaHandler.csproj" />
+    <ProjectReference Include="Headless\FirebaseHandler\FirebaseHandler.csproj" />
     <ProjectReference Include="Headless\InvasionHandler\InvasionHandler.csproj" />
     <ProjectReference Include="Headless\ScreenshotHandler\ScreenshotHandler.csproj" />
     <ProjectReference Include="Headless\Shared\Shared.csproj" />
+    <ProjectReference Include="Headless\TwitchHandler\TwitchHandler.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -59,12 +60,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="access_token.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="bot_access_token.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="backspace.vbs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

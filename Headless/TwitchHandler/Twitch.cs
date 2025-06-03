@@ -1,16 +1,12 @@
-﻿using Headless.AtrapalhanciaHandler;
-using Headless.AtrapalhanciaHandler.Shared;
+﻿using Headless.Shared;
 using InvasionHandler;
 using JotasTwitchPortal.JSON;
 using Newtonsoft.Json;
-using Shared;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
 using TwitchLib.Api;
-using TwitchLib.Api.Helix;
 using TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward;
-using TwitchLib.Api.Interfaces;
 using TwitchLib.Client;
 using TwitchLib.Client.Events;
 using TwitchLib.Client.Models;
@@ -19,10 +15,9 @@ using TwitchLib.Communication.Models;
 using TwitchLib.EventSub.Websockets;
 using TwitchLib.PubSub;
 
-namespace JotasTwitchPortal
+namespace TwitchHandler
 {
-    //TODO renomear e fazer os bots do renejotas
-    public class TwitchPortal : ITwitchPortal
+    public class Twitch
     {
         private string ChannelName;
 
@@ -31,20 +26,15 @@ namespace JotasTwitchPortal
         string bot_access_token = File.ReadAllText("bot_access_token.txt");
         string access_token = File.ReadAllText("access_token.txt");
         TwitchClient client;
-        TwitchPubSub clientPubSub;
         TwitchAPI api;
-
-        private readonly EventSubWebsocketClient _eventSubWebsocketClient;
 
         private AlienInvasion Invasion = new AlienInvasion(); //TODO module adder instead of everyone having this? lol
 
-        private WebsocketAtrapalhanciasServer SocketServer; //TODO depreciar lentamente pra não expor essa camada
         private Dictionary<string, User> ConnectedUsers = new Dictionary<string, User>();
 
-        public TwitchPortal(ref WebsocketAtrapalhanciasServer socketServer, string channel)
+        public Twitch(string channel)
         {
             ChannelName = channel;
-            SocketServer = socketServer;
         }
 
         public void Connect()
@@ -120,7 +110,7 @@ namespace JotasTwitchPortal
 
             var userData = api.Helix.Users.GetUsersAsync(logins: new List<string>() { username }).GetAwaiter().GetResult().Users[0];
             Console.WriteLine(username, "portou");
-            SocketServer.WebSocketServices[$"/channel/{ChannelName}/overlay"].Sessions.Broadcast(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
+            External.SendToOverlay(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
             {
                 username = userData.DisplayName,
                 profile_pic = userData.ProfileImageUrl,

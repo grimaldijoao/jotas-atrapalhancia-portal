@@ -7,15 +7,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FirebaseAdmin" Version="3.2.0" />
+    <PackageReference Include="TwitchLib" Version="3.5.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Shared\Shared.csproj" />
+    <ProjectReference Include="..\InvasionHandler\InvasionHandler.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="renejotas-731e3d8bca97.json">
+    <None Update="access_token.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="bot_access_token.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

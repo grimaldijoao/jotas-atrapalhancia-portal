@@ -1,8 +1,7 @@
 ﻿using Headless.AtrapalhanciaHandler;
-using Headless.AtrapalhanciaHandler.Shared;
+using Headless.Shared;
 using ScreenshotHandler;
-using Shared;
-using TwitchLib.Api.Helix.Models.Games;
+using TwitchHandler;
 
 namespace JotasTwitchPortal
 {
@@ -13,7 +12,7 @@ namespace JotasTwitchPortal
             var channelName = "umjotas";
             var socketManager = new WebSocketServerManager();
 
-            var portal = new TwitchPortal(ref socketManager.server, channelName);
+            var portal = new Twitch(channelName);
             portal.Connect();
 
             socketManager.Initialize(channelName, (sender, gameName) => //TODO race condition?
@@ -29,7 +28,13 @@ namespace JotasTwitchPortal
             var screenshotListener = new ScreenshotListener();
             screenshotListener.Init();
 
-            HttpServer.Run(ref socketManager.server, portal);
+            HttpServer.OnGameConnected += (sender, game) => 
+            {
+                var rewards = TwitchAtrapalhanciaBuilder.BuildRewardsFromFile(Environment.CurrentDirectory + $"/Atrapalhancias/{game}.dll");
+                portal.CreateRedeemRewards(rewards);
+            };
+
+            HttpServer.Run(socketManager.server, new FirebaseAuthHandler());
 
             Console.ReadLine();
 
