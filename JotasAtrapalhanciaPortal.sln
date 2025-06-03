@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.12.35707.178
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JotasTwitchPortal", "JotasTwitchPortal.csproj", "{023ACA1F-FED9-4BAA-A664-AB542E750F7C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JotasAtrapalhanciaPortal", "JotasAtrapalhanciaPortal.csproj", "{023ACA1F-FED9-4BAA-A664-AB542E750F7C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AtrapalhanciaHandler", "Headless\AtrapalhanciaHandler\AtrapalhanciaHandler.csproj", "{9FA12866-243F-4C6E-B86B-D80F45B6978C}"
 EndProject
@@ -15,9 +15,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "Headless\Shared\S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScreenshotHandler", "Headless\ScreenshotHandler\ScreenshotHandler.csproj", "{E8F3ED8A-AF60-4680-A52E-1D79FCBBA2AF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FirebaseHandler", "Headless\FirebaseHandler\FirebaseHandler.csproj", "{46682F76-C1AD-4E4B-9572-6A8D85FD1FF1}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SharedProjects", "SharedProjects", "{F4C115C6-1BC9-4F6F-9D66-DAAF408AE32B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FirebaseHandler", "Headless\FirebaseHandler\FirebaseHandler.csproj", "{25726FA9-2E95-42C5-B5B9-2AEB07F7F518}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwitchHandler", "Headless\TwitchHandler\TwitchHandler.csproj", "{C3F96AB6-F12F-4624-A958-9430C4AF81B6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,10 +47,14 @@ Global
 		{E8F3ED8A-AF60-4680-A52E-1D79FCBBA2AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E8F3ED8A-AF60-4680-A52E-1D79FCBBA2AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E8F3ED8A-AF60-4680-A52E-1D79FCBBA2AF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{46682F76-C1AD-4E4B-9572-6A8D85FD1FF1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{46682F76-C1AD-4E4B-9572-6A8D85FD1FF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{46682F76-C1AD-4E4B-9572-6A8D85FD1FF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{46682F76-C1AD-4E4B-9572-6A8D85FD1FF1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{25726FA9-2E95-42C5-B5B9-2AEB07F7F518}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25726FA9-2E95-42C5-B5B9-2AEB07F7F518}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25726FA9-2E95-42C5-B5B9-2AEB07F7F518}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25726FA9-2E95-42C5-B5B9-2AEB07F7F518}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3F96AB6-F12F-4624-A958-9430C4AF81B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3F96AB6-F12F-4624-A958-9430C4AF81B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3F96AB6-F12F-4624-A958-9430C4AF81B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3F96AB6-F12F-4624-A958-9430C4AF81B6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -58,7 +64,8 @@ Global
 		{B53A4DCA-FE90-4CD9-895D-243A8EBB0A0E} = {F49F68B0-1541-4BFB-84E2-C6AAA6B54D43}
 		{95BE018A-6CD1-46E1-B045-B58A98862946} = {F4C115C6-1BC9-4F6F-9D66-DAAF408AE32B}
 		{E8F3ED8A-AF60-4680-A52E-1D79FCBBA2AF} = {F49F68B0-1541-4BFB-84E2-C6AAA6B54D43}
-		{46682F76-C1AD-4E4B-9572-6A8D85FD1FF1} = {F4C115C6-1BC9-4F6F-9D66-DAAF408AE32B}
 		{F4C115C6-1BC9-4F6F-9D66-DAAF408AE32B} = {F49F68B0-1541-4BFB-84E2-C6AAA6B54D43}
+		{25726FA9-2E95-42C5-B5B9-2AEB07F7F518} = {F4C115C6-1BC9-4F6F-9D66-DAAF408AE32B}
+		{C3F96AB6-F12F-4624-A958-9430C4AF81B6} = {F49F68B0-1541-4BFB-84E2-C6AAA6B54D43}
 	EndGlobalSection
 EndGlobal

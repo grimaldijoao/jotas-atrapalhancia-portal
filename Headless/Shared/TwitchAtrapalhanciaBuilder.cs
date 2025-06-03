@@ -1,17 +1,17 @@
 ﻿using System.Reflection;
 using TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward;
 
-namespace Shared
+namespace Headless.Shared
 {
     public class TwitchAtrapalhanciaBuilder
     {
-        private Assembly? CurrentDomain_AssemblyResolve(object? sender, ResolveEventArgs args)
+        private static Assembly? CurrentDomain_AssemblyResolve(object? sender, ResolveEventArgs args)
         {
             var assembly = ((AppDomain)sender).GetAssemblies().FirstOrDefault(x => x.FullName == args.Name);
             return assembly;
         }
 
-        public Dictionary<string, CreateCustomRewardsRequest> BuildRewardsFromFile(string assemblyPath)
+        public static Dictionary<string, CreateCustomRewardsRequest> BuildRewardsFromFile(string assemblyPath)
         {
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
             Assembly.Load(File.ReadAllBytes(Environment.CurrentDirectory + $"/Atrapalhancias/AtrapalhanciasBase.dll"));

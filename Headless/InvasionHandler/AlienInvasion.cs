@@ -1,8 +1,8 @@
-﻿using Headless.AtrapalhanciaHandler.Shared;
+﻿using Headless.Shared;
 using Newtonsoft.Json;
 using System.Text;
 
-namespace InvasionHandler
+namespace InvasionHandler //TODO decouple this to shared so that I can import it on the twitch handler?
 {
     public class AlienInvasion
     {

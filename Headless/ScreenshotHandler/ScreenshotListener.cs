@@ -1,6 +1,5 @@
-﻿using Headless.AtrapalhanciaHandler.Shared;
+﻿using Headless.Shared;
 using Headless.Shared.Utils;
-using System.Text;
 
 namespace ScreenshotHandler
 {

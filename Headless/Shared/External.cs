@@ -1,6 +1,4 @@
-﻿using WebSocketSharp;
-
-namespace Headless.AtrapalhanciaHandler.Shared
+﻿namespace Headless.Shared
 {
     public class External
     {
