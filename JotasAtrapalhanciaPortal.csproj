@@ -7,11 +7,13 @@
     <Nullable>enable</Nullable>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
-    <Title>Jotas Twitch Portal</Title>
+    <Title>Jotas Atrapalhancia Portal</Title>
     <Authors>jonhyfun</Authors>
     <Company>Jotape Corporation</Company>
     <PackageIcon>twitchportal.png</PackageIcon>
     <ApplicationIcon>twitchportal.ico</ApplicationIcon>
+    <AssemblyName>JotasAtrapalhanciaPortal</AssemblyName>
+    <StartupObject>JotasAtrapalhanciaPortal.Program</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>

@@ -3,7 +3,7 @@ using Headless.Shared;
 using ScreenshotHandler;
 using TwitchHandler;
 
-namespace JotasTwitchPortal
+namespace JotasAtrapalhanciaPortal
 {
     internal class Program
     {
