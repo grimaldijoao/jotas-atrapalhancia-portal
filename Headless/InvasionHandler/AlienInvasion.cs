@@ -16,7 +16,7 @@ namespace InvasionHandler //TODO decouple this to shared so that I can import it
             {
                 //if (AlienFury == 2)
                 //{
-                    External.SendToOverlay(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
+                    External.SendToOverlay["umjotas"](Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
                     {
                         event_name = "invasion"
                     })));
@@ -32,7 +32,7 @@ namespace InvasionHandler //TODO decouple this to shared so that I can import it
             }
             else
             {
-                External.SendToOverlay(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
+                External.SendToOverlay["umjotas"](Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
                 {
                     event_name = "tchans"
                 })));

@@ -7,31 +7,50 @@ namespace JotasAtrapalhanciaPortal
 {
     internal class Program
     {
+        private static Dictionary<string, Twitch> TwitchListeners = new Dictionary<string, Twitch>();
+
         static void Main(string[] args)
         {
-            var channelName = "umjotas";
             var socketManager = new WebSocketServerManager();
+            socketManager.Initialize();
 
-            var portal = new Twitch(channelName);
-            portal.Connect();
+            //var screenshotListener = new ScreenshotListener();
+            //screenshotListener.Init();
 
-            socketManager.Initialize(channelName, (sender, gameName) => //TODO race condition?
+            HttpServer.OnSocketCreationRequested += (sender, channel) =>
             {
-                GameService service = sender;
-                External.SendToBroadcaster = socketManager.server.WebSocketServices[$"/channel/{channelName}/"].Sessions.Broadcast;
-            }, (sender) =>
+                socketManager.CreateChannelServices(channel,
+                    (sender) =>
+                    {
+                        GameService service = sender;
+                        if (service.Connected)
+                        {
+                            External.SendToBroadcaster[channel] = socketManager.server.WebSocketServices[$"/channel/{channel}/"].Sessions.Broadcast;
+                        }
+                        else
+                        {
+                            Console.WriteLine($"{channel} disconnected!");
+                            TwitchListeners.Remove(channel);
+                        }
+                    },
+                    (sender) =>
+                    {
+                        External.SendToOverlay[channel] = socketManager.server.WebSocketServices[$"/channel/{channel}/overlay/"].Sessions.Broadcast;
+                    });
+
+                var twitchConnection = new Twitch(channel);
+                twitchConnection.Connect();
+
+                TwitchListeners.Add(channel, twitchConnection);
+            };
+
+            HttpServer.OnGameConnected += (sender, args) => 
             {
-                External.SendToOverlay = socketManager.server.WebSocketServices[$"/channel/{channelName}/overlay/"].Sessions.Broadcast;
-            });
-
-
-            var screenshotListener = new ScreenshotListener();
-            screenshotListener.Init();
-
-            HttpServer.OnGameConnected += (sender, game) => 
-            {
-                var rewards = TwitchAtrapalhanciaBuilder.BuildRewardsFromFile(Environment.CurrentDirectory + $"/Atrapalhancias/{game}.dll");
-                portal.CreateRedeemRewards(rewards);
+                if (TwitchListeners.ContainsKey(args.Channel))
+                {
+                    var rewards = TwitchAtrapalhanciaBuilder.BuildRewardsFromFile(Environment.CurrentDirectory + $"/Atrapalhancias/{args.Game}.dll");
+                    TwitchListeners[args.Channel].CreateRedeemRewards(rewards);
+                }
             };
 
             HttpServer.Run(socketManager.server, new FirebaseAuthHandler());

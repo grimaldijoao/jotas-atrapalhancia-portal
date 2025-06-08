@@ -21,10 +21,10 @@ namespace TwitchHandler
         public JObject payload { get; set;}
     }
 
-    public class EventSub
+    public class EventSub : IDisposable
     {
         public event EventHandler<RewardEvent> OnChatRewardRedeemed;
-        public static string SessionId;
+        public string SessionId;
         ClientWebSocket ws = new ClientWebSocket();
 
         public EventSub()
@@ -62,6 +62,12 @@ namespace TwitchHandler
                     }
                 }
             }
+        }
+
+        public void Dispose()
+        {
+            ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None).GetAwaiter().GetResult();
+            ws.Dispose();
         }
     }
 }

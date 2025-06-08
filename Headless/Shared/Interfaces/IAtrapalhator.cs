@@ -8,6 +8,6 @@ namespace Headless.Shared.Interfaces
 {
     public interface IAtrapalhator
     {
-        public void Atrapalhate(string atrapalhancia);
+        public void Atrapalhate(string channel, string atrapalhancia);
     }
 }

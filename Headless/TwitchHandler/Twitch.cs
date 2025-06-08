@@ -12,12 +12,10 @@ using TwitchLib.Client.Events;
 using TwitchLib.Client.Models;
 using TwitchLib.Communication.Clients;
 using TwitchLib.Communication.Models;
-using TwitchLib.EventSub.Websockets;
-using TwitchLib.PubSub;
 
 namespace TwitchHandler
 {
-    public class Twitch
+    public class Twitch : IDisposable
     {
         private string ChannelName;
 
@@ -27,6 +25,7 @@ namespace TwitchHandler
         string access_token = File.ReadAllText("access_token.txt");
         TwitchClient client;
         TwitchAPI api;
+        EventSub eventSub;
 
         private AlienInvasion Invasion = new AlienInvasion(); //TODO module adder instead of everyone having this? lol
 
@@ -46,12 +45,7 @@ namespace TwitchHandler
                 ThrottlingPeriod = TimeSpan.FromSeconds(30)
             };
 
-            WebSocketClient customClient = new WebSocketClient(clientOptions);
-
-            customClient.OnData += CustomClient_OnData;
-            customClient.OnMessage += CustomClient_OnMessage;
-
-            client = new TwitchClient(customClient);
+            client = new TwitchClient(new WebSocketClient(clientOptions));
             client.Initialize(credentials, ChannelName);
 
             api = new TwitchAPI();
@@ -63,42 +57,31 @@ namespace TwitchHandler
             client.OnUserJoined += Client_OnUserJoined;
             client.OnJoinedChannel += Client_OnJoinedChannel;
             client.OnMessageReceived += Client_OnMessageReceived;
-            client.OnWhisperReceived += Client_OnWhisperReceived;
-            client.OnNewSubscriber += Client_OnNewSubscriber;
-            client.OnConnected += Client_OnConnected;
 
 
             client.Connect();
 
-            var eventSub = new EventSub();
+            eventSub = new EventSub();
             eventSub.OnChatRewardRedeemed += EventSub_OnChatRewardRedeemed;
             eventSub.Connect();
 
             Task.Factory.StartNew(() =>
             {
-                while (EventSub.SessionId == null)
+                while (eventSub.SessionId == null)
                 {
                     Task.Delay(500).Wait();
                 }
                 
-                var response = api.Helix.EventSub.CreateEventSubSubscriptionAsync("channel.channel_points_custom_reward_redemption.add", "1", new Dictionary<string, string>() { { "broadcaster_user_id", "235332563" } }, TwitchLib.Api.Core.Enums.EventSubTransportMethod.Websocket, EventSub.SessionId, null, null, clientId, access_token).GetAwaiter().GetResult();
+                var response = api.Helix.EventSub.CreateEventSubSubscriptionAsync("channel.channel_points_custom_reward_redemption.add", "1", new Dictionary<string, string>() { { "broadcaster_user_id", "235332563" } }, TwitchLib.Api.Core.Enums.EventSubTransportMethod.Websocket, eventSub.SessionId, null, null, clientId, access_token).GetAwaiter().GetResult();
                 
             });
+
+            Console.WriteLine($"{ChannelName} connected!");
         }
 
         public void SendChatMessage(string message)
         {
             client.SendMessage(client.JoinedChannels.ElementAt(0), message);
-        }
-
-        private void CustomClient_OnMessage(object? sender, TwitchLib.Communication.Events.OnMessageEventArgs e)
-        {
-            Console.WriteLine(e.Message);
-        }
-
-        private void CustomClient_OnData(object? sender, TwitchLib.Communication.Events.OnDataEventArgs e)
-        {
-            Console.WriteLine(e.Data);
         }
 
         private User TryFirstJoin(string username)
@@ -110,12 +93,16 @@ namespace TwitchHandler
 
             var userData = api.Helix.Users.GetUsersAsync(logins: new List<string>() { username }).GetAwaiter().GetResult().Users[0];
             Console.WriteLine(username, "portou");
-            External.SendToOverlay(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
+
+            if (External.SendToOverlay.TryGetValue(ChannelName, out var SendToOverlay))
             {
-                username = userData.DisplayName,
-                profile_pic = userData.ProfileImageUrl,
-                event_name = "porta"
-            })));
+                SendToOverlay(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
+                {
+                    username = userData.DisplayName,
+                    profile_pic = userData.ProfileImageUrl,
+                    event_name = "porta"
+                })));
+            }
 
             var user = new User(username, userData.ProfileImageUrl);
 
@@ -163,18 +150,18 @@ namespace TwitchHandler
             {
                 if (ConnectedUsers.TryGetValue(rewardEvent.Event.UserLogin, out user))
                 {
-                    user.Atrapalhate(TwitchRewardsAtrapalhancias[rewardEvent.Event.Reward.Id]);
+                    user.Atrapalhate(ChannelName, TwitchRewardsAtrapalhancias[rewardEvent.Event.Reward.Id]);
                 }
                 else
                 {
                     user = TryFirstJoin(rewardEvent.Event.UserLogin);
-                    user.Atrapalhate(TwitchRewardsAtrapalhancias[rewardEvent.Event.Reward.Id]);
+                    user.Atrapalhate(ChannelName, TwitchRewardsAtrapalhancias[rewardEvent.Event.Reward.Id]);
                 }
 
                 //TODO sistema de verdade
                 if(rewardEvent.Event.Reward.Title == "Nao pode pular")
                 {
-                    External.SendToOverlay(Encoding.UTF8.GetBytes(@"
+                    External.SendToOverlay[ChannelName](Encoding.UTF8.GetBytes(@"
                         {""event_name"": ""jumpTimer"", ""label"": ""Não pode pular!"", ""seconds"": 5}
                     "));
                 }
@@ -193,11 +180,6 @@ namespace TwitchHandler
         private void Client_OnLog(object sender, OnLogArgs e)
         {
             Console.WriteLine($"{e.DateTime.ToString()}: {e.BotUsername} - {e.Data}");
-        }
-
-        private void Client_OnConnected(object sender, OnConnectedArgs e)
-        {        
-
         }
 
         private void Client_OnJoinedChannel(object sender, OnJoinedChannelArgs e)
@@ -254,14 +236,13 @@ namespace TwitchHandler
             TryFirstJoin(e.Username);
         }
 
-        private void Client_OnWhisperReceived(object sender, OnWhisperReceivedArgs e)
+        public void Dispose()
         {
+            api = null;
 
-        }
-
-        private void Client_OnNewSubscriber(object sender, OnNewSubscriberArgs e)
-        {
-            
+            eventSub.Dispose();
+            client.Disconnect();
+            client = null;
         }
     }
 }
