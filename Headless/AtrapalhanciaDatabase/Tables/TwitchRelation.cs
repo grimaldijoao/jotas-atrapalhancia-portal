@@ -9,11 +9,42 @@ namespace AtrapalhanciaDatabase.Tables
             return @"
                 CREATE TABLE IF NOT EXISTS Twitch_Relation (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    broadcaster_id TEXT UNIQUE NOT NULL,
                     access_token TEXT,
                     refresh_token TEXT,
-                    channel_name TEXT NOT NULL
+                    channel_name TEXT UNIQUE NOT NULL
                 );
             ";
+        }
+
+        public static TwitchRelation? GetInstance(string channel_name)
+        {
+            return SQLite.WithConnection((conn) =>
+            {
+                using var cmd = new SQLiteCommand($"SELECT * FROM Twitch_Relation WHERE channel_name = @channel_name", conn);
+                cmd.Parameters.AddWithValue("channel_name", channel_name);
+
+                using var reader = cmd.ExecuteReader();
+
+                TwitchRelation? twitchRelation = null;
+
+                if (reader.Read())
+                {
+                    twitchRelation = new TwitchRelation();
+
+                    twitchRelation.Id = reader.GetInt32(reader.GetOrdinal("id"));
+                    twitchRelation.BroadcasterId = reader.GetString(reader.GetOrdinal("broadcaster_id"));
+                    twitchRelation.ChannelName = reader.GetString(reader.GetOrdinal("channel_name"));
+                    twitchRelation.AccessToken = reader.GetNullableString("access_token");
+                    twitchRelation.RefreshToken = reader.GetNullableString("refresh_token");
+
+                }
+
+                reader.Close();
+
+                return twitchRelation;
+
+            });
         }
 
         public static TwitchRelation? GetInstance(long id) 
@@ -32,6 +63,7 @@ namespace AtrapalhanciaDatabase.Tables
                     twitchRelation = new TwitchRelation();
 
                     twitchRelation.Id = reader.GetInt32(reader.GetOrdinal("id"));
+                    twitchRelation.BroadcasterId = reader.GetString(reader.GetOrdinal("broadcaster_id"));
                     twitchRelation.ChannelName = reader.GetString(reader.GetOrdinal("channel_name"));
                     twitchRelation.AccessToken = reader.GetNullableString("access_token");
                     twitchRelation.RefreshToken = reader.GetNullableString("refresh_token");
@@ -45,16 +77,17 @@ namespace AtrapalhanciaDatabase.Tables
             });
         }
 
-        public static TwitchRelation? Create(string channelName, string? accessToken = null, string? refreshToken = null)
+        public static TwitchRelation? Create(string broadcaster_id, string channelName, string? accessToken = null, string? refreshToken = null)
         {
             var result = SQLite.WithConnection((conn) =>
             {
                 using var cmd = new SQLiteCommand(@"
-                    INSERT OR REPLACE INTO Twitch_Relation (channel_name, access_token, refresh_token)
-                    VALUES (@channel_name, @access_token, @refresh_token);
+                    INSERT OR REPLACE INTO Twitch_Relation (broadcaster_id, channel_name, access_token, refresh_token)
+                    VALUES (@broadcaster_id, @channel_name, @access_token, @refresh_token);
                     SELECT last_insert_rowid();
                 ", conn);
 
+                cmd.Parameters.AddWithValue("broadcaster_id", broadcaster_id);
                 cmd.Parameters.AddWithValue("channel_name", channelName);
                 cmd.Parameters.AddWithValue("access_token", (object?)accessToken ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("refresh_token", (object?)refreshToken ?? DBNull.Value);
@@ -71,11 +104,12 @@ namespace AtrapalhanciaDatabase.Tables
             return null;
         }
 
-        public int Id { get; set; }
+        public int Id { get; private set; }
 
-        public string? AccessToken { get; set; }
-        public string? RefreshToken { get; set; }
+        public string? AccessToken { get; private set; }
+        public string? RefreshToken { get; private set; }
 
-        public string ChannelName { get; set; } = null!;
+        public string BroadcasterId { get; private set; } = null!;
+        public string ChannelName { get; private set; } = null!;
     }
 }

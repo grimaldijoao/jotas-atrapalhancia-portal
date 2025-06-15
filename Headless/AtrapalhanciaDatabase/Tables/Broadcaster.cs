@@ -85,13 +85,13 @@ namespace AtrapalhanciaDatabase.Tables
             });
         }
 
-        public string Id { get; set; } = null!;
+        public string Id { get; private set; } = null!;
 
-        public string Email { get; set; }
+        public string Email { get; private set; }
 
-        public string CreatedAt { get; set; }
+        public string CreatedAt { get; private set; }
 
-        public string? LastAccess { get; set; }
+        public string? LastAccess { get; private set; }
 
 
         private int _twitchRelationId;

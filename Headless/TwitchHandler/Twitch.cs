@@ -18,22 +18,26 @@ namespace TwitchHandler
     public class Twitch : IDisposable
     {
         private string ChannelName;
+        private string BroadcasterId;
+        private string AccessToken;
 
-        string clientId = "gp762nuuoqcoxypju8c569th9wz7q5";
-        string userId = "235332563"; //broadcaster id
+        string clientId = "fzrpx1kxpqk3cyklu4uhw9q0mpux2y";
         string bot_access_token = File.ReadAllText("bot_access_token.txt");
-        string access_token = File.ReadAllText("access_token.txt");
         TwitchClient client;
         TwitchAPI api;
         EventSub eventSub;
+
+        private Dictionary<string, CreateCustomRewardsRequest> CurrentRewards = new Dictionary<string, CreateCustomRewardsRequest>();
 
         private AlienInvasion Invasion = new AlienInvasion(); //TODO module adder instead of everyone having this? lol
 
         private Dictionary<string, User> ConnectedUsers = new Dictionary<string, User>();
 
-        public Twitch(string channel)
+        public Twitch(string broadcaster_id, string channel, string accessToken)
         {
             ChannelName = channel;
+            BroadcasterId = broadcaster_id;
+            AccessToken = accessToken;
         }
 
         public void Connect()
@@ -50,8 +54,9 @@ namespace TwitchHandler
 
             api = new TwitchAPI();
 
-            api.Settings.AccessToken = bot_access_token;
+            api.Settings.AccessToken = AccessToken;
             api.Settings.ClientId = clientId;
+
 
             client.OnLog += Client_OnLog;
             client.OnUserJoined += Client_OnUserJoined;
@@ -72,11 +77,16 @@ namespace TwitchHandler
                     Task.Delay(500).Wait();
                 }
                 
-                var response = api.Helix.EventSub.CreateEventSubSubscriptionAsync("channel.channel_points_custom_reward_redemption.add", "1", new Dictionary<string, string>() { { "broadcaster_user_id", "235332563" } }, TwitchLib.Api.Core.Enums.EventSubTransportMethod.Websocket, eventSub.SessionId, null, null, clientId, access_token).GetAwaiter().GetResult();
+                var response = api.Helix.EventSub.CreateEventSubSubscriptionAsync("channel.channel_points_custom_reward_redemption.add", "1", new Dictionary<string, string>() { { "broadcaster_user_id", BroadcasterId } }, TwitchLib.Api.Core.Enums.EventSubTransportMethod.Websocket, eventSub.SessionId, null, null, clientId, AccessToken).GetAwaiter().GetResult();
                 
             });
 
             Console.WriteLine($"{ChannelName} connected!");
+        }
+
+        public void SendChatMessage(string message, TwitchClient client)
+        {
+            client.SendMessage(client.JoinedChannels.ElementAt(0), message); //? maybe i should use a single client for everyone...
         }
 
         public void SendChatMessage(string message)
@@ -113,33 +123,67 @@ namespace TwitchHandler
 
         ConcurrentDictionary<string, string> TwitchRewardsAtrapalhancias = new ConcurrentDictionary<string, string>();
 
-        public void CreateRedeemRewards(Dictionary<string, CreateCustomRewardsRequest> atrapalhanciaRewards)
+        public void DeleteRedeemRewards()
         {
-            var rewards = api.Helix.ChannelPoints.GetCustomRewardAsync(userId, null, true, access_token).GetAwaiter().GetResult();
-            
             var tasks = new List<Task>();
-            
-            foreach(var reward in rewards.Data)
+
+            foreach (var rewardId in CurrentRewards.Keys)
             {
-                api.Helix.ChannelPoints.DeleteCustomRewardAsync(userId, reward.Id, access_token).GetAwaiter().GetResult();
+                var task = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await api.Helix.ChannelPoints.DeleteCustomRewardAsync(BroadcasterId, rewardId);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to delete reward {rewardId}: {ex.Message}");
+                    }
+                });
+
+                tasks.Add(task);
             }
 
-            Task.WaitAll(tasks.ToArray());
+            Task.WhenAll(tasks).GetAwaiter().GetResult();
+        }
 
-            tasks.Clear();
-            
+        public CreateCustomRewardsResponse[] CreateRedeemRewards(Dictionary<string, CreateCustomRewardsRequest> atrapalhanciaRewards)
+        {
+            List<CreateCustomRewardsResponse> creationResult = new List<CreateCustomRewardsResponse>();
+            var tasks = new List<Task>();
+
             foreach (var reward in atrapalhanciaRewards)
             {
-                tasks.Add(
-                    api.Helix.ChannelPoints.CreateCustomRewardsAsync(userId, reward.Value, access_token).ContinueWith((customReward) =>
+                var key = reward.Key;
+                var request = reward.Value;
+
+                var task = Task.Run(async () =>
+                {
+                    try
                     {
-                        TwitchRewardsAtrapalhancias[customReward.Result.Data.First().Id] = reward.Key;
-                    })
-                );
+                        var customReward = await api.Helix.ChannelPoints.CreateCustomRewardsAsync(BroadcasterId, request, AccessToken);
+                        var rewardId = customReward.Data.First().Id;
+
+                        TwitchRewardsAtrapalhancias[rewardId] = key;
+
+                        creationResult.Add(customReward);
+                        CurrentRewards.Add(rewardId, reward.Value);
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to create reward '{key}': {ex.Message}");
+                    }
+                });
+
+                tasks.Add(task);
             }
-            
-            Task.WaitAll(tasks.ToArray());
+
+            Task.WhenAll(tasks).GetAwaiter().GetResult();
+
+            return creationResult.ToArray();
         }
+
 
         private void EventSub_OnChatRewardRedeemed(object sender, RewardEvent rewardEvent)
         {
@@ -204,15 +248,7 @@ namespace TwitchHandler
             //    CreateRedeemRewards(rewards);
             //});
 
-            Task.Factory.StartNew(() =>
-            {
-                while (client.JoinedChannels.Count == 0)
-                {
-                    Task.Delay(500).Wait();
-                    //? I dont know why this occasionally happens, TwitchLib is sus...
-                }
-                SendChatMessage("🤖🤝👽");
-            });
+            SendChatMessage("🤖🤝👽", (TwitchClient)sender);
         }
 
         private void Client_OnMessageReceived(object sender, OnMessageReceivedArgs e)
@@ -238,6 +274,8 @@ namespace TwitchHandler
 
         public void Dispose()
         {
+            DeleteRedeemRewards();
+
             api = null;
 
             eventSub.Dispose();

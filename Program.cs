@@ -1,6 +1,6 @@
-﻿using Headless.AtrapalhanciaHandler;
+﻿using AtrapalhanciaDatabase.Tables;
+using Headless.AtrapalhanciaHandler;
 using Headless.Shared;
-using ScreenshotHandler;
 using TwitchHandler;
 
 namespace JotasAtrapalhanciaPortal
@@ -8,6 +8,7 @@ namespace JotasAtrapalhanciaPortal
     internal class Program
     {
         private static Dictionary<string, Twitch> TwitchListeners = new Dictionary<string, Twitch>();
+        private static TwitchAtrapalhanciaBuilder twitchAtrapalhanciaBuilder = new TwitchAtrapalhanciaBuilder();
 
         static void Main(string[] args)
         {
@@ -30,26 +31,48 @@ namespace JotasAtrapalhanciaPortal
                         else
                         {
                             Console.WriteLine($"{channel} disconnected!");
-                            TwitchListeners.Remove(channel);
+
+                            if(TwitchListeners.ContainsKey(channel))
+                            {
+                                TwitchListeners[channel].Dispose();
+                                TwitchListeners.Remove(channel);
+                                TwitchReward.DeleteRewardsByChannelName(channel);
+                            }
                         }
                     },
                     (sender) =>
                     {
                         External.SendToOverlay[channel] = socketManager.server.WebSocketServices[$"/channel/{channel}/overlay/"].Sessions.Broadcast;
                     });
-
-                var twitchConnection = new Twitch(channel);
-                twitchConnection.Connect();
-
-                TwitchListeners.Add(channel, twitchConnection);
             };
 
             HttpServer.OnGameConnected += (sender, args) => 
             {
-                if (TwitchListeners.ContainsKey(args.Channel))
+                var channel = args.ChannelName;
+                var broadcaster_id = args.BroadcasterId;
+                var access_token = args.AccessToken;
+
+                if (!TwitchListeners.TryGetValue(channel, out var twitchConnection))
                 {
-                    var rewards = TwitchAtrapalhanciaBuilder.BuildRewardsFromFile(Environment.CurrentDirectory + $"/Atrapalhancias/{args.Game}.dll");
-                    TwitchListeners[args.Channel].CreateRedeemRewards(rewards);
+                    TwitchListeners.Remove(channel);
+                    twitchConnection = new Twitch(broadcaster_id, channel, access_token);
+                    twitchConnection.Connect();
+
+                    TwitchListeners.Add(channel, twitchConnection);
+                }
+
+                var atrapalhancias = twitchAtrapalhanciaBuilder.BuildAtrapalhanciasFromFile(Environment.CurrentDirectory + $"/Atrapalhancias/{args.Game}.dll");
+                var rewards = TwitchListeners[channel].CreateRedeemRewards(atrapalhancias);
+
+
+                foreach (var rewardResponse in rewards)
+                {
+                    var reward = rewardResponse.Data.First();
+                    var relation = TwitchRelation.GetInstance(channel);
+
+                    if (relation == null) break;
+
+                    TwitchReward.Create(reward.Id, reward.Title, relation.Id);
                 }
             };
 

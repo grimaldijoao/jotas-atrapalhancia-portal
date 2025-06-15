@@ -1,5 +1,6 @@
 ﻿using AtrapalhanciaDatabase.Tables;
 using System.Data.SQLite;
+using System.Reflection;
 
 namespace AtrapalhanciaDatabase
 {
@@ -37,21 +38,25 @@ namespace AtrapalhanciaDatabase
             using var pragmaCmd = new SQLiteCommand("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 3000; PRAGMA foreign_keys = ON;", connection);
             pragmaCmd.ExecuteNonQuery();
 
-            Migrate();
+            Migrate([typeof(TwitchRelation), typeof(TwitchReward), typeof(Broadcaster)]);
 
             initialized = true;
         }
 
-        private static void Migrate()
+        private static void Migrate(Type[] tableTypes)
         {
-            using (var cmd = new SQLiteCommand(TwitchRelation.GetCreateTableString(), connection))
+            foreach (var tableType in tableTypes)
             {
-                cmd.ExecuteNonQuery();
-            }
+                MethodInfo? method = tableType.GetMethod("GetCreateTableString", BindingFlags.Public | BindingFlags.Static);
+                if (method == null)
+                {
+                    throw new ArgumentException($"Type {tableType.Name} must implement IMyInterface.");
+                }
 
-            using (var cmd = new SQLiteCommand(Broadcaster.GetCreateTableString(), connection))
-            {
-                cmd.ExecuteNonQuery();
+                using (var cmd = new SQLiteCommand(method.Invoke(null, null) as string, connection))
+                {
+                    cmd.ExecuteNonQuery();
+                }
             }
         }
 

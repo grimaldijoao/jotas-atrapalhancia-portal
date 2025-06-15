@@ -38,7 +38,7 @@ namespace TwitchHandler
 
             var buffer = new byte[4096];
 
-            while (true)
+            while (ws.State == WebSocketState.Open)
             {
                 var result = await ws.ReceiveAsync(buffer, CancellationToken.None);
                 var json = Encoding.UTF8.GetString(buffer, 0, result.Count);

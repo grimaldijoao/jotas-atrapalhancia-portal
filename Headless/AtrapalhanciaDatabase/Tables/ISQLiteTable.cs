@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace AtrapalhanciaDatabase.Tables
+﻿namespace AtrapalhanciaDatabase.Tables
 {
-    public interface ISQLiteTable<T, J> where T : class
+    public interface ISQLMigratable
     {
         static abstract string GetCreateTableString();
+    }
+
+    public interface ISQLiteTable<T, J> : ISQLMigratable where T : class
+    {
         static abstract T? GetInstance(J id);
     }
 }

@@ -15,9 +15,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="access_token.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="bot_access_token.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
