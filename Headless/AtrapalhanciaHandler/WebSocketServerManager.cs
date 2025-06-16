@@ -2,7 +2,6 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OBSWebsocketDotNet;
-using System.Diagnostics;
 using System.Text;
 using WebSocketSharp;
 using WebSocketSharp.Server;
