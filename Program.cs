@@ -2,7 +2,6 @@
 using Headless.AtrapalhanciaHandler;
 using Headless.Shared;
 using TwitchHandler;
-using System.Linq;
 
 namespace JotasAtrapalhanciaPortal
 {
