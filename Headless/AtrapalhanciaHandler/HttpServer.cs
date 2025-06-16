@@ -78,7 +78,7 @@ namespace Headless.AtrapalhanciaHandler
 
     public class HttpServer : IDisposable
     {
-        private const string url = "http://localhost:8000/";
+        private const string url = "http://+:8000/";
         private CancellationTokenSource CancellationToken = new CancellationTokenSource();
 
         private ITokenDecoder TokenDecoder;

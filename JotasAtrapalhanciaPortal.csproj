@@ -45,7 +45,7 @@
 
   <ItemGroup>
     <Reference Include="websocket-sharp">
-      <HintPath>..\..\External\websocket-sharp-master\websocket-sharp\bin\Release\net452\websocket-sharp.dll</HintPath>
+      <HintPath>Headless\AtrapalhanciaHandler\websocket-sharp.dll</HintPath>
     </Reference>
   </ItemGroup>
 
