@@ -123,6 +123,20 @@ namespace TwitchHandler
 
         ConcurrentDictionary<string, string> TwitchRewardsAtrapalhancias = new ConcurrentDictionary<string, string>();
 
+        public async Task<bool> DeleteRedeemReward(string rewardId)
+        {
+            try
+            {
+                await api.Helix.ChannelPoints.DeleteCustomRewardAsync(BroadcasterId, rewardId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to delete reward {rewardId}: {ex.Message}");
+                return false;
+            }
+        }
+
         public void DeleteRedeemRewards()
         {
             var tasks = new List<Task>();

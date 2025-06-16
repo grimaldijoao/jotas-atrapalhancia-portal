@@ -35,7 +35,7 @@ namespace AtrapalhanciaDatabase.Tables
                     twitchReward = new TwitchReward();
                     twitchRelationId = reader.GetNullableInt("twitch_relation_id");
 
-                    twitchReward.Id = reader.GetInt32(reader.GetOrdinal("id"));
+                    twitchReward.Id = reader.GetString(reader.GetOrdinal("id"));
                     twitchReward.Name = reader.GetString(reader.GetOrdinal("broadcaster_id"));
 
                 }
@@ -78,6 +78,37 @@ namespace AtrapalhanciaDatabase.Tables
             return null;
         }
 
+        public static List<TwitchReward> GetRewardsByChannelName(string channelName)
+        {
+            return SQLite.WithConnection((conn) =>
+            {
+                using var cmd = new SQLiteCommand(@"
+                    SELECT * FROM Twitch_Reward
+                    WHERE twitch_relation_id IN (
+                        SELECT id FROM Twitch_Relation WHERE channel_name = @channel_name
+                    );
+                ", conn);
+
+                cmd.Parameters.AddWithValue("channel_name", channelName);
+
+                using var reader = cmd.ExecuteReader();
+
+                List<TwitchReward> rewards = new List<TwitchReward>();
+
+                while (reader.Read())
+                {
+                    var twitchReward = new TwitchReward();
+                    twitchReward.Id = reader.GetString(reader.GetOrdinal("id"));
+                    twitchReward.Name = reader.GetString(reader.GetOrdinal("name"));
+                    rewards.Add(twitchReward);
+                }
+
+                reader.Close();
+
+                return rewards;
+            });
+        }
+
         public static void DeleteRewardsByChannelName(string channelName)
         {
             SQLite.WithConnection((conn) =>
@@ -108,7 +139,7 @@ namespace AtrapalhanciaDatabase.Tables
             });
         }
 
-        public int Id { get; private set; }
+        public string Id { get; private set; }
 
         public string? Name { get; private set; }
 

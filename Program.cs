@@ -2,6 +2,7 @@
 using Headless.AtrapalhanciaHandler;
 using Headless.Shared;
 using TwitchHandler;
+using System.Linq;
 
 namespace JotasAtrapalhanciaPortal
 {
@@ -61,7 +62,17 @@ namespace JotasAtrapalhanciaPortal
                     TwitchListeners.Add(channel, twitchConnection);
                 }
 
-                var atrapalhancias = twitchAtrapalhanciaBuilder.BuildAtrapalhanciasFromFile(Environment.CurrentDirectory + $"/Atrapalhancias/{args.Game}.dll");
+                var dbRewards = TwitchReward.GetRewardsByChannelName(channel);
+
+                foreach (var reward in dbRewards)
+                {
+                    if (TwitchListeners[channel].DeleteRedeemReward(reward.Id).GetAwaiter().GetResult())
+                    {
+                        reward.Delete();
+                    }
+                }
+
+                var atrapalhancias = twitchAtrapalhanciaBuilder.BuildAtrapalhanciasFromFile(Path.Combine(Environment.CurrentDirectory, "Atrapalhancias", $"{args.Game}.dll"));
                 var rewards = TwitchListeners[channel].CreateRedeemRewards(atrapalhancias);
 
 
