@@ -241,7 +241,7 @@ namespace Headless.AtrapalhanciaHandler
 
         public WebSocketServerManager()
         {
-            server = new WebsocketAtrapalhanciasServer("ws://localhost:5000");
+            server = new WebsocketAtrapalhanciasServer("ws://127.0.0.1:5000");
             //obsSocket = new OBSWebsocket();
             //obsSocket.ConnectAsync("ws://localhost:4455", null);
         }
