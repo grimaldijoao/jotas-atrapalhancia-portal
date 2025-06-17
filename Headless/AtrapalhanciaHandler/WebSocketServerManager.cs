@@ -117,7 +117,8 @@ namespace Headless.AtrapalhanciaHandler
 
         protected override void OnOpen()
         {
-
+            Console.WriteLine("Game Connected: " + Context.UserEndPoint);
+            Console.WriteLine("Path: " + Context.Host);
         }
 
         protected override void OnClose(CloseEventArgs e)
@@ -255,6 +256,8 @@ namespace Headless.AtrapalhanciaHandler
                 server.AddWebSocketService("/channel/" + channel + "/overlay", () => new OverlayService(onOverlayConnected, channel));
                 server.AddWebSocketService("/channel/" + channel + "/streamdeck", () => new StreamDeckService(obsSocket, channel));
                 //server.AddWebSocketService("/channel/" + channel + "/obs", () => new OBSService());
+
+                Console.WriteLine("Websocket registered: /channel/" + channel);
             }
         }
 
