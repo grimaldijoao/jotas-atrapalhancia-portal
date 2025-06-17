@@ -242,19 +242,19 @@ namespace Headless.AtrapalhanciaHandler
         public WebSocketServerManager()
         {
             server = new WebsocketAtrapalhanciasServer("ws://localhost:5000");
-            obsSocket = new OBSWebsocket();
-            obsSocket.ConnectAsync("ws://localhost:4455", null);
+            //obsSocket = new OBSWebsocket();
+            //obsSocket.ConnectAsync("ws://localhost:4455", null);
         }
 
         public void CreateChannelServices(string channel, Action<GameService> onGameConnectionChanged, Action<OverlayService> onOverlayConnected)
         {
             //TODO better way to handle this null check (if it even can happen in prod)
-            if (server.WebSocketServices[$"/channel/{channel}"] == null)
+            if (server.WebSocketServices[$"/ws/channel/{channel}"] == null)
             {
-                server.AddWebSocketService("/channel/" + channel, () => new GameService(onGameConnectionChanged, channel));
-                server.AddWebSocketService("/channel/" + channel + "/overlay", () => new OverlayService(onOverlayConnected, channel));
-                server.AddWebSocketService("/channel/" + channel + "/streamdeck", () => new StreamDeckService(obsSocket, channel));
-                server.AddWebSocketService("/channel/" + channel + "/obs", () => new OBSService());
+                server.AddWebSocketService("/ws/channel/" + channel, () => new GameService(onGameConnectionChanged, channel));
+                server.AddWebSocketService("/ws/channel/" + channel + "/overlay", () => new OverlayService(onOverlayConnected, channel));
+                server.AddWebSocketService("/ws/channel/" + channel + "/streamdeck", () => new StreamDeckService(obsSocket, channel));
+                //server.AddWebSocketService("/ws/channel/" + channel + "/obs", () => new OBSService());
             }
         }
 

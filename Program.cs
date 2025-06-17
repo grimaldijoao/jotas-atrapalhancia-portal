@@ -26,7 +26,7 @@ namespace JotasAtrapalhanciaPortal
                         GameService service = sender;
                         if (service.Connected)
                         {
-                            External.SendToBroadcaster[channel] = socketManager.server.WebSocketServices[$"/channel/{channel}/"].Sessions.Broadcast;
+                            External.SendToBroadcaster[channel] = socketManager.server.WebSocketServices[$"/ws/channel/{channel}/"].Sessions.Broadcast;
                         }
                         else
                         {
@@ -42,7 +42,7 @@ namespace JotasAtrapalhanciaPortal
                     },
                     (sender) =>
                     {
-                        External.SendToOverlay[channel] = socketManager.server.WebSocketServices[$"/channel/{channel}/overlay/"].Sessions.Broadcast;
+                        External.SendToOverlay[channel] = socketManager.server.WebSocketServices[$"/ws/channel/{channel}/overlay/"].Sessions.Broadcast;
                     });
             };
 
