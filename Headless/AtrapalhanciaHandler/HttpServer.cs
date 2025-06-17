@@ -69,7 +69,7 @@ namespace Headless.AtrapalhanciaHandler
                 Action reload = () =>
                 {
                     //TODO mais de um service?
-                    Server.WebSocketServices["/ws/channel/umjotas"].Sessions.Broadcast("reload"); //TODO mais de um user conectado no umjotas?
+                    Server.WebSocketServices["/channel/umjotas"].Sessions.Broadcast("reload"); //TODO mais de um user conectado no umjotas?
                 };
                 reload.Debounce(ref cancelTokenSource, 375);
             }
@@ -396,7 +396,7 @@ namespace Headless.AtrapalhanciaHandler
                         var broadcasterId = broadcaster.TwitchRelation.BroadcasterId;
                         var accessToken = broadcaster.TwitchRelation.AccessToken;
 
-                        if (WebsocketServer.WebSocketServices[$"/ws/channel/{channel}"].Sessions.TryGetSession(socketId, out var session))
+                        if (WebsocketServer.WebSocketServices[$"/channel/{channel}"].Sessions.TryGetSession(socketId, out var session))
                         {
                             if(OnGameConnected != null)
                             {
