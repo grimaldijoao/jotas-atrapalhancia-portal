@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
 using TwitchLib.Api;
+using TwitchLib.Api.Core.Exceptions;
 using TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward;
 using TwitchLib.Client;
 using TwitchLib.Client.Events;
@@ -22,7 +23,7 @@ namespace TwitchHandler
         private string AccessToken;
 
         string clientId = "fzrpx1kxpqk3cyklu4uhw9q0mpux2y";
-        string bot_access_token = File.ReadAllText("bot_access_token.txt");
+        string bot_access_token = File.ReadAllText(Path.Combine("Headless", "TwitchHandler", "bot_access_token.txt"));
         TwitchClient client;
         TwitchAPI api;
         EventSub eventSub;
@@ -57,6 +58,12 @@ namespace TwitchHandler
             api.Settings.AccessToken = AccessToken;
             api.Settings.ClientId = clientId;
 
+            var tokenValidation = api.Auth.ValidateAccessTokenAsync(AccessToken).GetAwaiter().GetResult();
+
+            if(tokenValidation == null)
+            {
+                throw new BadRequestException($"Invalid token for {ChannelName}");
+            }
 
             client.OnLog += Client_OnLog;
             client.OnUserJoined += Client_OnUserJoined;
@@ -66,22 +73,19 @@ namespace TwitchHandler
 
             client.Connect();
 
+
             eventSub = new EventSub();
             eventSub.OnChatRewardRedeemed += EventSub_OnChatRewardRedeemed;
+            eventSub.OnConnected += EventSub_OnConnected;
             eventSub.Connect();
 
-            Task.Factory.StartNew(() =>
-            {
-                while (eventSub.SessionId == null)
-                {
-                    Task.Delay(500).Wait();
-                }
-                
-                var response = api.Helix.EventSub.CreateEventSubSubscriptionAsync("channel.channel_points_custom_reward_redemption.add", "1", new Dictionary<string, string>() { { "broadcaster_user_id", BroadcasterId } }, TwitchLib.Api.Core.Enums.EventSubTransportMethod.Websocket, eventSub.SessionId, null, null, clientId, AccessToken).GetAwaiter().GetResult();
-                
-            });
 
             Console.WriteLine($"{ChannelName} connected!");
+        }
+
+        private void EventSub_OnConnected(object sender, string sessionId)
+        {
+            api.Helix.EventSub.CreateEventSubSubscriptionAsync("channel.channel_points_custom_reward_redemption.add", "1", new Dictionary<string, string>() { { "broadcaster_user_id", BroadcasterId } }, TwitchLib.Api.Core.Enums.EventSubTransportMethod.Websocket, sessionId, null, null, clientId, AccessToken).GetAwaiter().GetResult();
         }
 
         public void SendChatMessage(string message, TwitchClient client)
@@ -149,7 +153,7 @@ namespace TwitchHandler
                     {
                         await api.Helix.ChannelPoints.DeleteCustomRewardAsync(BroadcasterId, rewardId);
                     }
-                    catch (Exception ex)
+                    catch (BadRequestException ex)
                     {
                         Console.WriteLine($"Failed to delete reward {rewardId}: {ex.Message}");
                     }
@@ -161,10 +165,13 @@ namespace TwitchHandler
             Task.WhenAll(tasks).GetAwaiter().GetResult();
         }
 
-        public CreateCustomRewardsResponse[] CreateRedeemRewards(Dictionary<string, CreateCustomRewardsRequest> atrapalhanciaRewards)
+        public async Task<CreateCustomRewardsResponse[]> CreateRedeemRewardsAsync(Dictionary<string, CreateCustomRewardsRequest> atrapalhanciaRewards)
         {
-            List<CreateCustomRewardsResponse> creationResult = new List<CreateCustomRewardsResponse>();
+            var creationResults = new List<CreateCustomRewardsResponse>();
+            var cts = new CancellationTokenSource();
             var tasks = new List<Task>();
+
+            var lockObj = new object();
 
             foreach (var reward in atrapalhanciaRewards)
             {
@@ -175,29 +182,41 @@ namespace TwitchHandler
                 {
                     try
                     {
+                        cts.Token.ThrowIfCancellationRequested();
+
                         var customReward = await api.Helix.ChannelPoints.CreateCustomRewardsAsync(BroadcasterId, request, AccessToken);
                         var rewardId = customReward.Data.First().Id;
 
                         TwitchRewardsAtrapalhancias[rewardId] = key;
 
-                        creationResult.Add(customReward);
-                        CurrentRewards.Add(rewardId, reward.Value);
-
+                        lock (lockObj)
+                        {
+                            creationResults.Add(customReward);
+                            CurrentRewards.Add(rewardId, reward.Value);
+                        }
                     }
-                    catch (Exception ex)
+                    catch (BadRequestException ex)
                     {
                         Console.WriteLine($"Failed to create reward '{key}': {ex.Message}");
+                        cts.Cancel();
+                        throw;
                     }
-                });
+                }, cts.Token);
 
                 tasks.Add(task);
             }
 
-            Task.WhenAll(tasks).GetAwaiter().GetResult();
+            try
+            {
+                await Task.WhenAll(tasks);
+            }
+            catch
+            {
+                throw;
+            }
 
-            return creationResult.ToArray();
+            return creationResults.ToArray();
         }
-
 
         private void EventSub_OnChatRewardRedeemed(object sender, RewardEvent rewardEvent)
         {

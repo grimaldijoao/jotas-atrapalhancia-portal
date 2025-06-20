@@ -1,6 +1,7 @@
 ﻿using AtrapalhanciaDatabase.Tables;
 using Headless.AtrapalhanciaHandler;
 using Headless.Shared;
+using System.Threading.Channels;
 using TwitchHandler;
 
 namespace JotasAtrapalhanciaPortal
@@ -52,37 +53,44 @@ namespace JotasAtrapalhanciaPortal
                 var broadcaster_id = args.BroadcasterId;
                 var access_token = args.AccessToken;
 
-                if (!TwitchListeners.TryGetValue(channel, out var twitchConnection))
+                try
                 {
-                    TwitchListeners.Remove(channel);
-                    twitchConnection = new Twitch(broadcaster_id, channel, access_token);
-                    twitchConnection.Connect();
-
-                    TwitchListeners.Add(channel, twitchConnection);
-                }
-
-                var dbRewards = TwitchReward.GetRewardsByChannelName(channel);
-
-                foreach (var reward in dbRewards)
-                {
-                    if (TwitchListeners[channel].DeleteRedeemReward(reward.Id).GetAwaiter().GetResult())
+                    if (!TwitchListeners.TryGetValue(channel, out var twitchConnection))
                     {
-                        reward.Delete();
+                        TwitchListeners.Remove(channel);
+                        twitchConnection = new Twitch(broadcaster_id, channel, access_token);
+                        twitchConnection.Connect();
+
+                        TwitchListeners.Add(channel, twitchConnection);
+                    }
+
+                    var dbRewards = TwitchReward.GetRewardsByChannelName(channel);
+
+                    foreach (var reward in dbRewards)
+                    {
+                        if (TwitchListeners[channel].DeleteRedeemReward(reward.Id).GetAwaiter().GetResult())
+                        {
+                            reward.Delete();
+                        }
+                    }
+
+                    var atrapalhancias = twitchAtrapalhanciaBuilder.BuildAtrapalhanciasFromFile(Path.Combine(Environment.CurrentDirectory, "Atrapalhancias", $"{args.Game}.dll"));
+                    var rewards = TwitchListeners[channel].CreateRedeemRewardsAsync(atrapalhancias).GetAwaiter().GetResult();
+
+                    foreach (var rewardResponse in rewards)
+                    {
+                        var reward = rewardResponse.Data.First();
+                        var relation = TwitchRelation.GetInstance(channel);
+
+                        if (relation == null) break;
+
+                        TwitchReward.Create(reward.Id, reward.Title, relation.Id);
                     }
                 }
-
-                var atrapalhancias = twitchAtrapalhanciaBuilder.BuildAtrapalhanciasFromFile(Path.Combine(Environment.CurrentDirectory, "Atrapalhancias", $"{args.Game}.dll"));
-                var rewards = TwitchListeners[channel].CreateRedeemRewards(atrapalhancias);
-
-
-                foreach (var rewardResponse in rewards)
+                catch (TwitchLib.Api.Core.Exceptions.BadRequestException e)
                 {
-                    var reward = rewardResponse.Data.First();
-                    var relation = TwitchRelation.GetInstance(channel);
-
-                    if (relation == null) break;
-
-                    TwitchReward.Create(reward.Id, reward.Title, relation.Id);
+                    Console.WriteLine($"{channel} twitch connection failed! ({e.Message})");
+                    throw;
                 }
             };
 

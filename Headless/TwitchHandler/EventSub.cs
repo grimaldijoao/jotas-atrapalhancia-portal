@@ -24,6 +24,7 @@ namespace TwitchHandler
     public class EventSub : IDisposable
     {
         public event EventHandler<RewardEvent> OnChatRewardRedeemed;
+        public event EventHandler<string> OnConnected;
         public string SessionId;
         ClientWebSocket ws = new ClientWebSocket();
 
@@ -52,6 +53,7 @@ namespace TwitchHandler
                         {
                             SessionId = message.payload.Value<JObject>("session")!.Value<string>("id")!;
                             Console.WriteLine(json);
+                            OnConnected.Invoke(this, SessionId);
                             //await ws.SendAsync(new ArraySegment<byte>(/**/, WebSocketMessageType.Text, true, CancellationToken.None);
                         }
                         else if(message.metadata.message_type == "notification" && message.metadata.subscription_type == "channel.channel_points_custom_reward_redemption.add")

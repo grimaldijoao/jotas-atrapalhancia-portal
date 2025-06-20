@@ -8,7 +8,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+<<<<<<< HEAD
     <PackageReference Include="jotas-websocket-sharp" Version="0.0.2" />
+=======
+    <None Remove="websocket-sharp.pdb" />
+  </ItemGroup>
+
+  <ItemGroup>
+>>>>>>> 48c5d75c4b961a29b8093f1e41d7d9e8c76e4b9c
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="obs-websocket-dotnet" Version="5.0.0.3" />
   </ItemGroup>

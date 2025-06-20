@@ -4,7 +4,9 @@
       "commandName": "Project"
     },
     "Container (Dockerfile)": {
-      "commandName": "Docker"
+      "commandName": "Docker",
+      "publishAllPorts": false,
+      "containerRunArguments": "-p 8000:8000 -p 5000:5000"
     },
     "WSL": {
       "commandName": "WSL2",
