@@ -90,7 +90,7 @@ namespace Headless.AtrapalhanciaHandler
         public static EventHandler<GameConnectedEventArgs>? OnGameConnected;
         public static EventHandler<string>? OnSocketCreationRequested;
 
-        private string twitch_client_secret = File.ReadAllText("client_secret.txt");
+        private string twitch_client_secret = File.ReadAllText(Path.Combine("Headless", "AtrapalhanciaHandler", "client_secret.txt"));
 
         public HttpServer(WebSocketServer wsServer, ITokenDecoder tokenDecoder)
         {
@@ -370,7 +370,6 @@ namespace Headless.AtrapalhanciaHandler
 
                     if (req.HttpMethod == "POST" && req.Url.AbsolutePath.StartsWith("/connect"))
                     {
-                        //TODO if token is not in db return code twitch-login (or code twitch-affiliate if it is not possible)
                         var connectUrlSplit = string.Join("", req.Url.AbsolutePath.Split("/connect").Skip(1)).Split('/').Skip(1);
                         if (connectUrlSplit.Count() != 3)
                         {
@@ -400,7 +399,16 @@ namespace Headless.AtrapalhanciaHandler
                         {
                             if(OnGameConnected != null)
                             {
-                                OnGameConnected.Invoke(this, new GameConnectedEventArgs(broadcasterId, channel, accessToken, game));
+                                try
+                                {
+                                    OnGameConnected.Invoke(this, new GameConnectedEventArgs(broadcasterId, channel, accessToken, game));
+                                    //? Handle actually invalid token (currently it crashes)
+                                }
+                                catch (Exception e)
+                                {
+                                    RespondJSON(ref resp, GetJSON(new { code = "twitch-login" }), HttpStatusCode.Unauthorized);
+                                    return;
+                                }
                             }
 
                             GameService gameSession = (GameService)session;

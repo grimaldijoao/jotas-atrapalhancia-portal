@@ -11,7 +11,7 @@ namespace Headless.Shared
         {
             FirebaseApp.Create(new AppOptions()
             {
-                Credential = GoogleCredential.FromFile("renejotas-731e3d8bca97.json")
+                Credential = GoogleCredential.FromFile(Path.Combine("Headless", "FirebaseHandler", "renejotas-731e3d8bca97.json"))
             });
         }
 

@@ -22,6 +22,9 @@ namespace AtrapalhanciaDatabase.Tables
 
         public static Broadcaster? GetInstance(string id)
         {
+            try
+            {
+
             return SQLite.WithConnection((conn) =>
             {
                 using var cmd = new SQLiteCommand($"SELECT * FROM Broadcaster WHERE id = @id", conn);
@@ -53,6 +56,12 @@ namespace AtrapalhanciaDatabase.Tables
                 return broadcaster;
 
             });
+            }
+            catch
+            {
+                Console.WriteLine($"Failed to get broadcaster: {id}");
+                return null;
+            }
         }
 
         public static void Create(string id, int twitch_relation_id, string email)
