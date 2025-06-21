@@ -1,7 +1,9 @@
 {
   "profiles": {
     "JotasAtrapalhanciaPortal": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "remoteDebugEnabled": false,
+      "remoteDebugMachine": ""
     },
     "Container (Dockerfile)": {
       "commandName": "Docker",

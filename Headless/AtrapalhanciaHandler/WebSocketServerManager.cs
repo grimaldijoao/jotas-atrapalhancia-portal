@@ -69,7 +69,8 @@ namespace Headless.AtrapalhanciaHandler
 
         protected override void OnMessage(MessageEventArgs e)
         {
-            if(!e.IsPing)
+            Console.WriteLine($"Message received: {e.Data}");
+            if (!e.IsPing)
             {
                 var messageArgs = e.Data.Split('/');
 
@@ -112,6 +113,7 @@ namespace Headless.AtrapalhanciaHandler
 
         public void SendMessage(string message)
         {
+            Console.WriteLine($"Sending message: {message}");
             this.Send(message);
         }
 

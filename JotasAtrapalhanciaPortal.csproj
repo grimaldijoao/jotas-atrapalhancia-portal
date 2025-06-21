@@ -18,8 +18,14 @@
 
   <ItemGroup>
     <Compile Remove="Headless\**" />
+    <Compile Remove="net8.0\**" />
+    <Compile Remove="packages\**" />
     <EmbeddedResource Remove="Headless\**" />
+    <EmbeddedResource Remove="net8.0\**" />
+    <EmbeddedResource Remove="packages\**" />
     <None Remove="Headless\**" />
+    <None Remove="net8.0\**" />
+    <None Remove="packages\**" />
   </ItemGroup>
 
   <ItemGroup>

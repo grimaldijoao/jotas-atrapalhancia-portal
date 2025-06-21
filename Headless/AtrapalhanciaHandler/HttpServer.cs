@@ -90,7 +90,7 @@ namespace Headless.AtrapalhanciaHandler
         public static EventHandler<GameConnectedEventArgs>? OnGameConnected;
         public static EventHandler<string>? OnSocketCreationRequested;
 
-        private string twitch_client_secret = File.ReadAllText(Path.Combine("Headless", "AtrapalhanciaHandler", "client_secret.txt"));
+        private string twitch_client_secret = File.ReadAllText("client_secret.txt");
 
         public HttpServer(WebSocketServer wsServer, ITokenDecoder tokenDecoder)
         {

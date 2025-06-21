@@ -28,6 +28,7 @@ namespace JotasAtrapalhanciaPortal
                         if (service.Connected)
                         {
                             External.SendToBroadcaster[channel] = socketManager.server.WebSocketServices[$"/channel/{channel}/"].Sessions.Broadcast;
+                            Console.WriteLine($"{channel} sendToBroadcaster registered!");
                         }
                         else
                         {
@@ -49,6 +50,7 @@ namespace JotasAtrapalhanciaPortal
 
             HttpServer.OnGameConnected += (sender, args) => 
             {
+                Console.WriteLine("Game Connected!");
                 var channel = args.ChannelName;
                 var broadcaster_id = args.BroadcasterId;
                 var access_token = args.AccessToken;
@@ -92,6 +94,7 @@ namespace JotasAtrapalhanciaPortal
                     Console.WriteLine($"{channel} twitch connection failed! ({e.Message})");
                     throw;
                 }
+                Console.WriteLine("Game Connected ok!");
             };
 
             HttpServer.Run(socketManager.server, new FirebaseAuthHandler());
