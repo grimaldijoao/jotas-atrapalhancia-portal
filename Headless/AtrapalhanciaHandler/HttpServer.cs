@@ -35,13 +35,12 @@ namespace Headless.AtrapalhanciaHandler
 
     public class AtrapalhanciaFileUpdateBroadcaster
     {
-        WebSocketServer Server;
         FileSystemWatcher watcher = new FileSystemWatcher();
         CancellationTokenSource? cancelTokenSource = null;
 
-        public AtrapalhanciaFileUpdateBroadcaster(WebSocketServer server)
+        public AtrapalhanciaFileUpdateBroadcaster()
         {
-            Server = server;
+
         }
 
         public void Watch()
@@ -69,7 +68,7 @@ namespace Headless.AtrapalhanciaHandler
                 Action reload = () =>
                 {
                     //TODO mais de um service?
-                    Server.WebSocketServices["/channel/umjotas"].Sessions.Broadcast("reload"); //TODO mais de um user conectado no umjotas?
+                    //Server.WebSocketServices["/channel/umjotas"].Sessions.Broadcast("reload"); //TODO mais de um user conectado no umjotas?
                 };
                 reload.Debounce(ref cancelTokenSource, 375);
             }
@@ -82,7 +81,6 @@ namespace Headless.AtrapalhanciaHandler
         private CancellationTokenSource CancellationToken = new CancellationTokenSource();
 
         private ITokenDecoder TokenDecoder;
-        private WebSocketServer WebsocketServer;
         private HttpListener? listener;
 
         private long requestCount = 0;
@@ -92,9 +90,8 @@ namespace Headless.AtrapalhanciaHandler
 
         private string twitch_client_secret = File.ReadAllText("client_secret.txt");
 
-        public HttpServer(WebSocketServer wsServer, ITokenDecoder tokenDecoder)
+        public HttpServer(ITokenDecoder tokenDecoder)
         {
-            WebsocketServer = wsServer;
             TokenDecoder = tokenDecoder;
         }
 
@@ -395,7 +392,8 @@ namespace Headless.AtrapalhanciaHandler
                         var broadcasterId = broadcaster.TwitchRelation.BroadcasterId;
                         var accessToken = broadcaster.TwitchRelation.AccessToken;
 
-                        if (WebsocketServer.WebSocketServices[$"/channel/{channel}"].Sessions.TryGetSession(socketId, out var session))
+                        //if (WebsocketServer.WebSocketServices[$"/channel/{channel}"].Sessions.TryGetSession(socketId, out var session))
+                        if(true)
                         {
                             if(OnGameConnected != null)
                             {
@@ -411,9 +409,9 @@ namespace Headless.AtrapalhanciaHandler
                                 }
                             }
 
-                            GameService gameSession = (GameService)session;
+                            //GameService gameSession = (GameService)session;
 
-                            gameSession.SendMessage("authenticated");
+                            //gameSession.SendMessage("authenticated");
                             RespondJSON(ref resp, Encoding.UTF8.GetBytes("Connected!"));
                             return;
                         }
@@ -446,15 +444,15 @@ namespace Headless.AtrapalhanciaHandler
             listener = null;
         }
 
-        public static void Run(WebSocketServer wsServer, ITokenDecoder tokenDecoder)
+        public static void Run(ITokenDecoder tokenDecoder)
         {
-            using (HttpServer server = new HttpServer(wsServer, tokenDecoder))
+            using (HttpServer server = new HttpServer(tokenDecoder))
             {
                 server.listener = new HttpListener();
                 server.listener.Prefixes.Add(url);
                 server.listener.Start();
 
-                var fileUpdateBroadcaster = new AtrapalhanciaFileUpdateBroadcaster(wsServer);
+                var fileUpdateBroadcaster = new AtrapalhanciaFileUpdateBroadcaster();
                 fileUpdateBroadcaster.Watch();
 
                 SQLite.Initialize();

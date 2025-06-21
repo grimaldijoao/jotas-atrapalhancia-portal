@@ -1,4 +1,5 @@
 ﻿using AtrapalhanciaDatabase.Tables;
+using AtrapalhanciaHandler;
 using Headless.AtrapalhanciaHandler;
 using Headless.Shared;
 using System.Threading.Channels;
@@ -13,39 +14,39 @@ namespace JotasAtrapalhanciaPortal
 
         static void Main(string[] args)
         {
-            var socketManager = new WebSocketServerManager();
-            socketManager.Initialize();
+            //var socketManager = new WebSocketServerManager();
+            //socketManager.Initialize();
 
             //var screenshotListener = new ScreenshotListener();
             //screenshotListener.Init();
 
             HttpServer.OnSocketCreationRequested += (sender, channel) =>
             {
-                socketManager.CreateChannelServices(channel,
-                    (sender) =>
-                    {
-                        GameService service = sender;
-                        if (service.Connected)
-                        {
-                            External.SendToBroadcaster[channel] = socketManager.server.WebSocketServices[$"/channel/{channel}/"].Sessions.Broadcast;
-                            Console.WriteLine($"{channel} sendToBroadcaster registered!");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"{channel} disconnected!");
-
-                            if(TwitchListeners.ContainsKey(channel))
-                            {
-                                TwitchListeners[channel].Dispose();
-                                TwitchListeners.Remove(channel);
-                                TwitchReward.DeleteRewardsByChannelName(channel);
-                            }
-                        }
-                    },
-                    (sender) =>
-                    {
-                        External.SendToOverlay[channel] = socketManager.server.WebSocketServices[$"/channel/{channel}/overlay/"].Sessions.Broadcast;
-                    });
+                //socketManager.CreateChannelServices(channel,
+                //    (sender) =>
+                //    {
+                //        GameService service = sender;
+                //        if (service.Connected)
+                //        {
+                //            External.SendToBroadcaster[channel] = socketManager.server.WebSocketServices[$"/channel/{channel}/"].Sessions.Broadcast;
+                //            Console.WriteLine($"{channel} sendToBroadcaster registered!");
+                //        }
+                //        else
+                //        {
+                //            Console.WriteLine($"{channel} disconnected!");
+                //
+                //            if(TwitchListeners.ContainsKey(channel))
+                //            {
+                //                TwitchListeners[channel].Dispose();
+                //                TwitchListeners.Remove(channel);
+                //                TwitchReward.DeleteRewardsByChannelName(channel);
+                //            }
+                //        }
+                //    },
+                //    (sender) =>
+                //    {
+                //        External.SendToOverlay[channel] = socketManager.server.WebSocketServices[$"/channel/{channel}/overlay/"].Sessions.Broadcast;
+                //    });
             };
 
             HttpServer.OnGameConnected += (sender, args) => 
@@ -60,8 +61,8 @@ namespace JotasAtrapalhanciaPortal
                     if (!TwitchListeners.TryGetValue(channel, out var twitchConnection))
                     {
                         TwitchListeners.Remove(channel);
-                        twitchConnection = new Twitch(broadcaster_id, channel, access_token);
-                        twitchConnection.Connect();
+                        //twitchConnection = new Twitch(broadcaster_id, channel, access_token);
+                        //twitchConnection.Connect();
 
                         TwitchListeners.Add(channel, twitchConnection);
                     }
@@ -77,17 +78,17 @@ namespace JotasAtrapalhanciaPortal
                     }
 
                     var atrapalhancias = twitchAtrapalhanciaBuilder.BuildAtrapalhanciasFromFile(Path.Combine(Environment.CurrentDirectory, "Atrapalhancias", $"{args.Game}.dll"));
-                    var rewards = TwitchListeners[channel].CreateRedeemRewardsAsync(atrapalhancias).GetAwaiter().GetResult();
-
-                    foreach (var rewardResponse in rewards)
-                    {
-                        var reward = rewardResponse.Data.First();
-                        var relation = TwitchRelation.GetInstance(channel);
-
-                        if (relation == null) break;
-
-                        TwitchReward.Create(reward.Id, reward.Title, relation.Id);
-                    }
+                    //var rewards = TwitchListeners[channel].CreateRedeemRewardsAsync(atrapalhancias).GetAwaiter().GetResult();
+                    //
+                    //foreach (var rewardResponse in rewards)
+                    //{
+                    //    var reward = rewardResponse.Data.First();
+                    //    var relation = TwitchRelation.GetInstance(channel);
+                    //
+                    //    if (relation == null) break;
+                    //
+                    //    TwitchReward.Create(reward.Id, reward.Title, relation.Id);
+                    //}
                 }
                 catch (TwitchLib.Api.Core.Exceptions.BadRequestException e)
                 {
@@ -97,7 +98,9 @@ namespace JotasAtrapalhanciaPortal
                 Console.WriteLine("Game Connected ok!");
             };
 
-            HttpServer.Run(socketManager.server, new FirebaseAuthHandler());
+            WebSocketServer.Listen();
+
+            HttpServer.Run(new FirebaseAuthHandler());
 
             Console.ReadLine();
 
