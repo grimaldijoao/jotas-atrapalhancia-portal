@@ -8,10 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="websocket-sharp.pdb" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <PackageReference Include="jotas-websocket-sharp" Version="0.0.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="obs-websocket-dotnet" Version="5.0.0.3" />
   </ItemGroup>
@@ -23,10 +20,11 @@
 
   <ItemGroup>
     <Reference Include="websocket-sharp">
-      <HintPath>websocket-sharp.dll</HintPath>
+      <HintPath>$(MSBuildThisFileDirectory)websocket-sharp.dll</HintPath>
+      <Private>true</Private>
     </Reference>
   </ItemGroup>
-
+  
   <ItemGroup>
     <None Update="client_secret.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
