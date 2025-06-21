@@ -23,8 +23,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwitchHandler", "Headless\T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AtrapalhanciaDatabase", "Headless\AtrapalhanciaDatabase\AtrapalhanciaDatabase.csproj", "{39107BDE-30E0-4898-B427-B43712A1DEA2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "websocket-sharp", "..\..\External\websocket-sharp-master\websocket-sharp\websocket-sharp.csproj", "{AE491D9A-FE68-4791-AA8F-695B33D4D44D}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
