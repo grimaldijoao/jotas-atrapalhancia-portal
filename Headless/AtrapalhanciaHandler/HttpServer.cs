@@ -7,7 +7,6 @@ using Newtonsoft.Json;
 using System.Text.Json;
 using System.Net;
 using System.Text;
-using WebSocketSharp.Server;
 using AtrapalhanciaHandler;
 
 namespace Headless.AtrapalhanciaHandler

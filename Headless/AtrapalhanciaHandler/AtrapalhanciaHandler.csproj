@@ -13,7 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\External\websocket-sharp-master\websocket-sharp\websocket-sharp.csproj" />
     <ProjectReference Include="..\AtrapalhanciaDatabase\AtrapalhanciaDatabase.csproj" />
     <ProjectReference Include="..\Shared\Shared.csproj" />
   </ItemGroup>
