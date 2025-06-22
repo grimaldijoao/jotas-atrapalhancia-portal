@@ -304,7 +304,7 @@ namespace Headless.AtrapalhanciaHandler
                             }
 
                             var clientId = "fzrpx1kxpqk3cyklu4uhw9q0mpux2y";
-                            var redirectUri = "https://atrapalhancias.com.br/login/emulator";
+                            var redirectUri = "https://atrapalhancias.com.br/login/emulator/";
 
                             using var client = new HttpClient();
                             var tokenRequest = new FormUrlEncodedContent(new Dictionary<string, string>
