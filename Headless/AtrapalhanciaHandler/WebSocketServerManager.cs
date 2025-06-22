@@ -88,7 +88,7 @@ namespace Headless.AtrapalhanciaHandler
 
 			if (messageArgs[0] == "game")
 			{
-				var gameName = messageArgs[1].Replace(".dll", "").ToLower();
+				var gameName = messageArgs[1].Replace(".dll", "");
 				if (File.Exists(Path.Combine(Environment.CurrentDirectory,$"/Atrapalhancias/{gameName}.dll")))
 				{
 					SendAsync($"conectado/test");
