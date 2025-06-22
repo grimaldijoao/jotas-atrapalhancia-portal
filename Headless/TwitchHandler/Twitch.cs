@@ -23,14 +23,29 @@ namespace TwitchHandler
         private string AccessToken;
 
         string clientId = "fzrpx1kxpqk3cyklu4uhw9q0mpux2y";
-        string bot_access_token = File.ReadAllText(Path.Combine("Headless", "TwitchHandler", "bot_access_token.txt"));
+        string bot_access_token = File.ReadAllText("bot_access_token.txt");
         TwitchClient client;
-        TwitchAPI api;
+        TwitchAPI _api;
+        TwitchAPI api
+        {
+            get
+            {
+                return _api;
+            }
+            set
+            {
+                if(value == null)
+                {
+                    Console.WriteLine($"wtf null api {ChannelName} {BroadcasterId}");
+                }
+                _api = value;
+            }
+        }
         EventSub eventSub;
 
         private Dictionary<string, CreateCustomRewardsRequest> CurrentRewards = new Dictionary<string, CreateCustomRewardsRequest>();
 
-        private AlienInvasion Invasion = new AlienInvasion(); //TODO module adder instead of everyone having this? lol
+        private AlienInvasion Invasion = new AlienInvasion(); //TODO generic<T> module adder instead of everyone having this? lol
 
         private Dictionary<string, User> ConnectedUsers = new Dictionary<string, User>();
 
@@ -40,6 +55,7 @@ namespace TwitchHandler
             BroadcasterId = broadcaster_id;
             AccessToken = accessToken;
         }
+
 
         public void Connect()
         {
@@ -85,7 +101,7 @@ namespace TwitchHandler
 
         private void EventSub_OnConnected(object sender, string sessionId)
         {
-            api.Helix.EventSub.CreateEventSubSubscriptionAsync("channel.channel_points_custom_reward_redemption.add", "1", new Dictionary<string, string>() { { "broadcaster_user_id", BroadcasterId } }, TwitchLib.Api.Core.Enums.EventSubTransportMethod.Websocket, sessionId, null, null, clientId, AccessToken).GetAwaiter().GetResult();
+            var result = api.Helix.EventSub.CreateEventSubSubscriptionAsync("channel.channel_points_custom_reward_redemption.add", "1", new Dictionary<string, string>() { { "broadcaster_user_id", BroadcasterId } }, TwitchLib.Api.Core.Enums.EventSubTransportMethod.Websocket, sessionId, null, null, clientId, AccessToken).GetAwaiter().GetResult();
         }
 
         public void SendChatMessage(string message, TwitchClient client)
@@ -129,6 +145,7 @@ namespace TwitchHandler
 
         public async Task<bool> DeleteRedeemReward(string rewardId)
         {
+            //TODO if user doesnt connect (frontend fails) handle this gracefully
             try
             {
                 await api.Helix.ChannelPoints.DeleteCustomRewardAsync(BroadcasterId, rewardId);
@@ -238,9 +255,9 @@ namespace TwitchHandler
                 //TODO sistema de verdade
                 if(rewardEvent.Event.Reward.Title == "Nao pode pular")
                 {
-                    External.SendToOverlay[ChannelName](Encoding.UTF8.GetBytes(@"
-                        {""event_name"": ""jumpTimer"", ""label"": ""Não pode pular!"", ""seconds"": 5}
-                    "));
+                    //External.SendToOverlay[ChannelName](Encoding.UTF8.GetBytes(@"
+                    //    {""event_name"": ""jumpTimer"", ""label"": ""Não pode pular!"", ""seconds"": 5}
+                    //"));
                 }
             }
 
@@ -311,9 +328,9 @@ namespace TwitchHandler
 
             api = null;
 
-            eventSub.Dispose();
             client.Disconnect();
             client = null;
+            eventSub.Dispose();
         }
     }
 }

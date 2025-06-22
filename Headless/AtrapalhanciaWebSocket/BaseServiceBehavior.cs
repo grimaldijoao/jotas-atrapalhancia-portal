@@ -4,9 +4,9 @@
     {
         public string Route { get; private set; }
 
-        internal EventHandler<string> OnMessageEvent { get; private set; }
-        internal EventHandler OnOpenEvent { get; private set; }
-        internal EventHandler OnCloseEvent { get; private set; }
+        internal EventHandler<string> OnMessageEvent;
+        internal EventHandler OnOpenEvent;
+        internal EventHandler OnCloseEvent;
 
         internal Func<string, Task> send;
         internal Action close;

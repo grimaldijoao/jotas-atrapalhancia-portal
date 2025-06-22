@@ -55,33 +55,39 @@ namespace Headless.AtrapalhanciaHandler
 
 	public class GameBehavior : BaseServiceBehavior
 	{
-		public GameBehavior(string route) : base(route)
+		public event EventHandler OnConnectionOpen;
+        public event EventHandler OnConnectionClosed;
+
+        public GameBehavior(string route) : base(route)
 		{
 		}
 
 		protected override void OnOpen()
 		{
+			OnConnectionOpen.Invoke(this, EventArgs.Empty);
 
-		}
+        }
 
 		protected override void OnClose()
 		{
+            OnConnectionClosed.Invoke(this, EventArgs.Empty);
 
-		}
+        }
 
 		protected override void OnMessage(string message)
 		{
 			Console.WriteLine($"Message received: {message}");
 			var messageArgs = message.Split('/');
 
-			if (messageArgs[2] != "v2")
+            if (messageArgs.Length == 0)
+            {
+                Close();
+                return;
+            }
+
+            if (messageArgs[2] != "v2")
 			{
 				SendAsync("mismatch");
-				Close();
-				return;
-			}
-			if (messageArgs.Length == 0)
-			{
 				Close();
 				return;
 			}
@@ -96,7 +102,8 @@ namespace Headless.AtrapalhanciaHandler
 				else
 				{
 					Console.WriteLine($"Atrapalhancia game not found! {Path.Combine(Environment.CurrentDirectory, $"Atrapalhancias/{gameName}.dll")}");
-				}
+                    Close();
+                }
 			}
 		}
 	}

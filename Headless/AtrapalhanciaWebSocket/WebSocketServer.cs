@@ -247,10 +247,15 @@ namespace AtrapalhanciaWebSocket
                     continue;
                 }
 
-                // Handle Ping (opcode 0x8) — break after close frame
+                // Handle Close (opcode 0x8) — reply with Close frame and break
                 if (opcode == 0x8)
                 {
-                    Console.WriteLine("Client sent close frame.");
+                    Console.WriteLine("Client sent close frame. Sending close frame in response.");
+
+                    // Proper close frame: FIN=1, opcode=0x8, no payload
+                    byte[] closeFrame = new byte[] { 0x88, 0x00 };
+                    await stream.WriteAsync(closeFrame, 0, closeFrame.Length);
+
                     break;
                 }
 
