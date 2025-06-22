@@ -6,8 +6,4 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="TwitchLib.Api.Helix.Models" Version="3.9.0" />
-  </ItemGroup>
-
 </Project>

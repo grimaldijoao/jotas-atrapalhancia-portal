@@ -7,8 +7,8 @@ using Newtonsoft.Json;
 using System.Text.Json;
 using System.Net;
 using System.Text;
-using WebSocketSharp.Server;
 using AtrapalhanciaHandler;
+using AtrapalhanciaWebSocket;
 
 namespace Headless.AtrapalhanciaHandler
 {
@@ -35,13 +35,12 @@ namespace Headless.AtrapalhanciaHandler
 
     public class AtrapalhanciaFileUpdateBroadcaster
     {
-        WebSocketServer Server;
         FileSystemWatcher watcher = new FileSystemWatcher();
         CancellationTokenSource? cancelTokenSource = null;
 
-        public AtrapalhanciaFileUpdateBroadcaster(WebSocketServer server)
+        public AtrapalhanciaFileUpdateBroadcaster()
         {
-            Server = server;
+
         }
 
         public void Watch()
@@ -69,7 +68,7 @@ namespace Headless.AtrapalhanciaHandler
                 Action reload = () =>
                 {
                     //TODO mais de um service?
-                    Server.WebSocketServices["/channel/umjotas"].Sessions.Broadcast("reload"); //TODO mais de um user conectado no umjotas?
+                    //Server.WebSocketServices["/channel/umjotas"].Sessions.Broadcast("reload"); //TODO mais de um user conectado no umjotas?
                 };
                 reload.Debounce(ref cancelTokenSource, 375);
             }
@@ -82,8 +81,8 @@ namespace Headless.AtrapalhanciaHandler
         private CancellationTokenSource CancellationToken = new CancellationTokenSource();
 
         private ITokenDecoder TokenDecoder;
-        private WebSocketServer WebsocketServer;
         private HttpListener? listener;
+        private WebSocketServer SocketServer;
 
         private long requestCount = 0;
 
@@ -92,10 +91,10 @@ namespace Headless.AtrapalhanciaHandler
 
         private string twitch_client_secret = File.ReadAllText("client_secret.txt");
 
-        public HttpServer(WebSocketServer wsServer, ITokenDecoder tokenDecoder)
+        public HttpServer(ITokenDecoder tokenDecoder, WebSocketServer socketServer)
         {
-            WebsocketServer = wsServer;
             TokenDecoder = tokenDecoder;
+            SocketServer = socketServer;
         }
 
         private void AddCORSHeaders(HttpListenerResponse resp)
@@ -395,7 +394,12 @@ namespace Headless.AtrapalhanciaHandler
                         var broadcasterId = broadcaster.TwitchRelation.BroadcasterId;
                         var accessToken = broadcaster.TwitchRelation.AccessToken;
 
-                        if (WebsocketServer.WebSocketServices[$"/channel/{channel}"].Sessions.TryGetSession(socketId, out var session))
+                        IPAddress ipAddress = req.RemoteEndPoint!.Address;
+                        if (IPAddress.IsLoopback(ipAddress)) ipAddress = IPAddress.Loopback; // Converts ::1 → 127.0.0.1
+
+                        var ip = ipAddress.ToString();
+
+                        if (SocketServer.ConnectionExists(ip))
                         {
                             if(OnGameConnected != null)
                             {
@@ -411,9 +415,7 @@ namespace Headless.AtrapalhanciaHandler
                                 }
                             }
 
-                            GameService gameSession = (GameService)session;
-
-                            gameSession.SendMessage("authenticated");
+                            SocketServer.SendMessageAsync(ip, "authenticated").GetAwaiter().GetResult();
                             RespondJSON(ref resp, Encoding.UTF8.GetBytes("Connected!"));
                             return;
                         }
@@ -433,8 +435,6 @@ namespace Headless.AtrapalhanciaHandler
             return Task.CompletedTask;
         }
 
-
-
         public void Dispose()
         {
             if(listener != null)
@@ -446,15 +446,15 @@ namespace Headless.AtrapalhanciaHandler
             listener = null;
         }
 
-        public static void Run(WebSocketServer wsServer, ITokenDecoder tokenDecoder)
+        public static void Run(ITokenDecoder tokenDecoder, WebSocketServer socketServer)
         {
-            using (HttpServer server = new HttpServer(wsServer, tokenDecoder))
+            using (HttpServer server = new HttpServer(tokenDecoder, socketServer))
             {
                 server.listener = new HttpListener();
                 server.listener.Prefixes.Add(url);
                 server.listener.Start();
 
-                var fileUpdateBroadcaster = new AtrapalhanciaFileUpdateBroadcaster(wsServer);
+                var fileUpdateBroadcaster = new AtrapalhanciaFileUpdateBroadcaster();
                 fileUpdateBroadcaster.Watch();
 
                 SQLite.Initialize();

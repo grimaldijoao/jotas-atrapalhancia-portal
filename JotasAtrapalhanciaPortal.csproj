@@ -50,12 +50,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="websocket-sharp">
-      <HintPath>Headless\AtrapalhanciaHandler\websocket-sharp.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="backspace.vbs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
