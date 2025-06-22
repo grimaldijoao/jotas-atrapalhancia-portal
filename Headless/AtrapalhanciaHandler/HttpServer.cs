@@ -23,6 +23,7 @@ namespace Headless.AtrapalhanciaHandler
         public string BroadcasterId => _broadcasterId;
         public string ChannelName => _channelName;
         public string AccessToken => _accessToken;
+        public string Game => _gameName;
         public string Route => _route;
 
         public GameConnectedEventArgs(string broadcasterId, string channel, string accessToken, string game, string route)
@@ -30,6 +31,7 @@ namespace Headless.AtrapalhanciaHandler
             _broadcasterId = broadcasterId;
             _channelName = channel;
             _accessToken = accessToken;
+            _gameName += game;
             _route += route;
         }
     }
