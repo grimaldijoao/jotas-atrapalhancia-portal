@@ -1,6 +1,7 @@
 ﻿using AtrapalhanciaDatabase.Tables;
 using Headless.AtrapalhanciaHandler;
 using Headless.Shared;
+using System;
 using TwitchHandler;
 
 namespace JotasAtrapalhanciaPortal
@@ -21,8 +22,7 @@ namespace JotasAtrapalhanciaPortal
 
                 gameBehavior.OnConnectionOpen += (_, _) =>
                 {
-                    External.SendToBroadcaster[guid] = (message) => socketManager.SocketServer.BroadcastServiceAsync($"/channel/{guid}", message);
-                    Console.WriteLine($"{guid} sendToBroadcaster registered!");
+                   
                 };
 
                 gameBehavior.OnConnectionClosed += (_, _) =>
@@ -49,6 +49,7 @@ namespace JotasAtrapalhanciaPortal
                 var channel = args.ChannelName;
                 var broadcaster_id = args.BroadcasterId;
                 var access_token = args.AccessToken;
+                var route = args.Route;
 
                 try
                 {
@@ -89,6 +90,9 @@ namespace JotasAtrapalhanciaPortal
                     Console.WriteLine($"{channel} twitch connection failed! ({e.Message})");
                     throw;
                 }
+
+                External.SendToBroadcaster[channel] = (message) => socketManager.SocketServer.BroadcastServiceAsync(args.Route, message);
+                Console.WriteLine($"{args.Route} sendToBroadcaster registered!");
             };
 
             HttpServer.Run(new FirebaseAuthHandler(), socketManager.SocketServer);

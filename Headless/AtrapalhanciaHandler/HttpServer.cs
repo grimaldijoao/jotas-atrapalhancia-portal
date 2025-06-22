@@ -18,18 +18,19 @@ namespace Headless.AtrapalhanciaHandler
         private readonly string _channelName;
         private readonly string _accessToken;
         private readonly string _gameName;
+        private readonly string _route;
 
         public string BroadcasterId => _broadcasterId;
         public string ChannelName => _channelName;
         public string AccessToken => _accessToken;
-        public string Game => _gameName;
+        public string Route => _route;
 
-        public GameConnectedEventArgs(string broadcasterId, string channel, string accessToken, string game)
+        public GameConnectedEventArgs(string broadcasterId, string channel, string accessToken, string game, string route)
         {
             _broadcasterId = broadcasterId;
             _channelName = channel;
             _accessToken = accessToken;
-            _gameName += game;
+            _route += route;
         }
     }
 
@@ -415,7 +416,7 @@ namespace Headless.AtrapalhanciaHandler
                             {
                                 try
                                 {
-                                    OnGameConnected.Invoke(this, new GameConnectedEventArgs(broadcasterId, channel, accessToken, game));
+                                    OnGameConnected.Invoke(this, new GameConnectedEventArgs(broadcasterId, channel, accessToken, game, SocketServer.GetConnection(ip).Behavior.Route));
                             
                                 }
                                 catch (Exception e)
