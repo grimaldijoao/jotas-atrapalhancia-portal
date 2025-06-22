@@ -89,9 +89,13 @@ namespace Headless.AtrapalhanciaHandler
 			if (messageArgs[0] == "game")
 			{
 				var gameName = messageArgs[1].Replace(".dll", "").ToLower();
-				if (File.Exists(Environment.CurrentDirectory + $"/Atrapalhancias/{gameName}.dll"))
+				if (File.Exists(Path.Combine(Environment.CurrentDirectory,$"/Atrapalhancias/{gameName}.dll")))
 				{
 					SendAsync($"conectado/test");
+				}
+				else
+				{
+					Console.WriteLine($"Atrapalhancia game not found! {Path.Combine(Environment.CurrentDirectory, $"/Atrapalhancias/{gameName}.dll")}");
 				}
 			}
 		}
