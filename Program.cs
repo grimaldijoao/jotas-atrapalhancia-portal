@@ -15,26 +15,30 @@ namespace JotasAtrapalhanciaPortal
             var socketManager = new WebSocketServerManager();
             socketManager.Initialize();
 
-            HttpServer.OnSocketCreationRequested += (sender, channel) =>
+            HttpServer.OnSocketCreationRequested += (sender, guid) =>
             {
-                var gameBehavior = new GameBehavior($"/channel/{channel}");
+                var gameBehavior = new GameBehavior($"/channel/{guid}");
 
                 gameBehavior.OnConnectionOpen += (_, _) =>
                 {
-                    External.SendToBroadcaster[channel] = (message) => socketManager.SocketServer.BroadcastServiceAsync($"/channel/{channel}", message);
-                    Console.WriteLine($"{channel} sendToBroadcaster registered!");
+                    External.SendToBroadcaster[guid] = (message) => socketManager.SocketServer.BroadcastServiceAsync($"/channel/{guid}", message);
+                    Console.WriteLine($"{guid} sendToBroadcaster registered!");
                 };
 
                 gameBehavior.OnConnectionClosed += (_, _) =>
                 {
-                    Console.WriteLine($"{channel} disconnected!");
+                    Console.WriteLine($"{gameBehavior.ChannelName ?? guid} disconnected!");
 
-                    if (TwitchListeners.ContainsKey(channel))
+                    if(gameBehavior.ChannelName != null)
                     {
-                        TwitchListeners[channel].Dispose();
-                        TwitchListeners.Remove(channel);
-                        TwitchReward.DeleteRewardsByChannelName(channel);
-                    }
+
+                        if (TwitchListeners.ContainsKey(gameBehavior.ChannelName))
+                        {
+                            TwitchListeners[gameBehavior.ChannelName].Dispose();
+                            TwitchListeners.Remove(gameBehavior.ChannelName);
+                            TwitchReward.DeleteRewardsByChannelName(gameBehavior.ChannelName);
+                        }
+                    } 
                 };
 
                 socketManager.SocketServer.AddService(gameBehavior);

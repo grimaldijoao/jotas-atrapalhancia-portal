@@ -58,6 +58,8 @@ namespace Headless.AtrapalhanciaHandler
 		public event EventHandler OnConnectionOpen;
         public event EventHandler OnConnectionClosed;
 
+		public string ChannelName;
+
         public GameBehavior(string route) : base(route)
 		{
 		}

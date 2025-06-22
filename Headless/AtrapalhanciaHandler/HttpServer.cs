@@ -416,7 +416,7 @@ namespace Headless.AtrapalhanciaHandler
                                 try
                                 {
                                     OnGameConnected.Invoke(this, new GameConnectedEventArgs(broadcasterId, channel, accessToken, game));
-                                    //? Handle actually invalid token (currently it crashes)
+                            
                                 }
                                 catch (Exception e)
                                 {
@@ -425,6 +425,7 @@ namespace Headless.AtrapalhanciaHandler
                                 }
                             }
 
+                            ((GameBehavior)(SocketServer.GetConnection(ip).Behavior)).ChannelName = channel;
                             SocketServer.SendMessageAsync(ip, "authenticated").GetAwaiter().GetResult();
                             RespondJSON(ref resp, Encoding.UTF8.GetBytes("Connected!"));
                             return;
