@@ -156,6 +156,8 @@ namespace Headless.AtrapalhanciaHandler
 
                 HttpListenerContext ctx = listener.GetContextAsync().GetAwaiter().GetResult();
 
+                var bannedAgents = new string[] { "agenciakom.com" };
+
                 new Task(() =>
                 {
                     HttpListenerRequest req = ctx.Request;
@@ -167,6 +169,11 @@ namespace Headless.AtrapalhanciaHandler
                     Console.WriteLine(req.UserHostName);
                     Console.WriteLine(req.UserAgent);
                     Console.WriteLine();
+
+                    if (bannedAgents.Contains(req.UserAgent.ToLower()))
+                    {
+                        return;
+                    }
 
                     //TODO frameworkify
                     if (req.HttpMethod == "OPTIONS")
