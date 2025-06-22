@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AtrapalhanciaDatabase\AtrapalhanciaDatabase.csproj" />
+    <ProjectReference Include="..\AtrapalhanciaWebSocket\AtrapalhanciaWebSocket.csproj" />
     <ProjectReference Include="..\Shared\Shared.csproj" />
   </ItemGroup>
   

@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwitchHandler", "Headless\T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AtrapalhanciaDatabase", "Headless\AtrapalhanciaDatabase\AtrapalhanciaDatabase.csproj", "{39107BDE-30E0-4898-B427-B43712A1DEA2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AtrapalhanciaWebSocket", "Headless\AtrapalhanciaWebSocket\AtrapalhanciaWebSocket.csproj", "{7267B50E-E0B3-4A58-AAED-318B330627E0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,10 @@ Global
 		{39107BDE-30E0-4898-B427-B43712A1DEA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{39107BDE-30E0-4898-B427-B43712A1DEA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{39107BDE-30E0-4898-B427-B43712A1DEA2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7267B50E-E0B3-4A58-AAED-318B330627E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7267B50E-E0B3-4A58-AAED-318B330627E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7267B50E-E0B3-4A58-AAED-318B330627E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7267B50E-E0B3-4A58-AAED-318B330627E0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -74,5 +80,6 @@ Global
 		{25726FA9-2E95-42C5-B5B9-2AEB07F7F518} = {F4C115C6-1BC9-4F6F-9D66-DAAF408AE32B}
 		{C3F96AB6-F12F-4624-A958-9430C4AF81B6} = {F49F68B0-1541-4BFB-84E2-C6AAA6B54D43}
 		{39107BDE-30E0-4898-B427-B43712A1DEA2} = {F4C115C6-1BC9-4F6F-9D66-DAAF408AE32B}
+		{7267B50E-E0B3-4A58-AAED-318B330627E0} = {F4C115C6-1BC9-4F6F-9D66-DAAF408AE32B}
 	EndGlobalSection
 EndGlobal

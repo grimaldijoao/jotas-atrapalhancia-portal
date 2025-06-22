@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Net;
 using System.Text;
 using AtrapalhanciaHandler;
+using AtrapalhanciaWebSocket;
 
 namespace Headless.AtrapalhanciaHandler
 {
@@ -81,6 +82,7 @@ namespace Headless.AtrapalhanciaHandler
 
         private ITokenDecoder TokenDecoder;
         private HttpListener? listener;
+        private WebSocketServer SocketServer;
 
         private long requestCount = 0;
 
@@ -89,9 +91,10 @@ namespace Headless.AtrapalhanciaHandler
 
         private string twitch_client_secret = File.ReadAllText("client_secret.txt");
 
-        public HttpServer(ITokenDecoder tokenDecoder)
+        public HttpServer(ITokenDecoder tokenDecoder, WebSocketServer socketServer)
         {
             TokenDecoder = tokenDecoder;
+            SocketServer = socketServer;
         }
 
         private void AddCORSHeaders(HttpListenerResponse resp)
@@ -391,8 +394,12 @@ namespace Headless.AtrapalhanciaHandler
                         var broadcasterId = broadcaster.TwitchRelation.BroadcasterId;
                         var accessToken = broadcaster.TwitchRelation.AccessToken;
 
-                        //if (WebsocketServer.WebSocketServices[$"/channel/{channel}"].Sessions.TryGetSession(socketId, out var session))
-                        if(true)
+                        IPAddress ipAddress = req.RemoteEndPoint!.Address;
+                        if (IPAddress.IsLoopback(ipAddress)) ipAddress = IPAddress.Loopback; // Converts ::1 → 127.0.0.1
+
+                        var ip = ipAddress.ToString();
+
+                        if (SocketServer.ConnectionExists(ip))
                         {
                             if(OnGameConnected != null)
                             {
@@ -408,9 +415,7 @@ namespace Headless.AtrapalhanciaHandler
                                 }
                             }
 
-                            //GameService gameSession = (GameService)session;
-
-                            //gameSession.SendMessage("authenticated");
+                            SocketServer.SendMessageAsync(ip, "authenticated").GetAwaiter().GetResult();
                             RespondJSON(ref resp, Encoding.UTF8.GetBytes("Connected!"));
                             return;
                         }
@@ -430,8 +435,6 @@ namespace Headless.AtrapalhanciaHandler
             return Task.CompletedTask;
         }
 
-
-
         public void Dispose()
         {
             if(listener != null)
@@ -443,9 +446,9 @@ namespace Headless.AtrapalhanciaHandler
             listener = null;
         }
 
-        public static void Run(ITokenDecoder tokenDecoder)
+        public static void Run(ITokenDecoder tokenDecoder, WebSocketServer socketServer)
         {
-            using (HttpServer server = new HttpServer(tokenDecoder))
+            using (HttpServer server = new HttpServer(tokenDecoder, socketServer))
             {
                 server.listener = new HttpListener();
                 server.listener.Prefixes.Add(url);
