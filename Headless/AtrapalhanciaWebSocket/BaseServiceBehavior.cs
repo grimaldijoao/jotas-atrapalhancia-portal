@@ -1,12 +1,12 @@
 ﻿namespace AtrapalhanciaWebSocket
 {
-    public abstract class BaseServiceBehavior
+    public abstract class BaseServiceBehavior : IServiceBehaviorEventsInvoker
     {
         public string Route { get; private set; }
 
-        internal EventHandler<string> OnMessageEvent;
-        internal EventHandler OnOpenEvent;
-        internal EventHandler OnCloseEvent;
+        event EventHandler<string> OnMessageEvent;
+        event EventHandler OnOpenEvent;
+        event EventHandler OnCloseEvent;
 
         internal Func<string, Task> send;
         internal Action close;
@@ -34,5 +34,20 @@
         protected abstract void OnOpen();
 
         protected abstract void OnClose();
+
+        void IServiceBehaviorEventsInvoker.InvokeOpenEvent()
+        {
+            OnOpenEvent.Invoke(this, EventArgs.Empty);
+        }
+
+        void IServiceBehaviorEventsInvoker.InvokeMessageEvent(string message)
+        {
+            OnMessageEvent.Invoke(this, message);
+        }
+
+        void IServiceBehaviorEventsInvoker.InvokeCloseEvent()
+        {
+            OnCloseEvent.Invoke(this, EventArgs.Empty);
+        }
     }
 }

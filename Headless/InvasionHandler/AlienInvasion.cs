@@ -16,11 +16,11 @@ namespace InvasionHandler //TODO decouple this to shared so that I can import it
             {
                 //if (AlienFury == 2)
                 //{
-                    External.SendToOverlay["umjotas"](Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
-                    {
-                        event_name = "invasion"
-                    })));
-                    Console.WriteLine("Alien fury unleashed!");
+                    //External.SendToOverlay["umjotas"](Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
+                    //{
+                    //    event_name = "invasion"
+                    //})));
+                    //Console.WriteLine("Alien fury unleashed!");
                     //AlienFury = 0;
                 //}
                //else
@@ -32,10 +32,10 @@ namespace InvasionHandler //TODO decouple this to shared so that I can import it
             }
             else
             {
-                External.SendToOverlay["umjotas"](Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
-                {
-                    event_name = "tchans"
-                })));
+                //External.SendToOverlay["umjotas"](Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
+                //{
+                //    event_name = "tchans"
+                //})));
             }
         }
     }

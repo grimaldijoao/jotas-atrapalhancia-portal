@@ -89,8 +89,8 @@ namespace Headless.AtrapalhanciaHandler
 
         private long requestCount = 0;
 
-        public static EventHandler<GameConnectedEventArgs>? OnGameConnected;
-        public static EventHandler<string>? OnSocketCreationRequested;
+        public static event EventHandler<GameConnectedEventArgs>? OnGameConnected;
+        public static event EventHandler<string>? OnSocketCreationRequested;
 
         private string twitch_client_secret = File.ReadAllText("client_secret.txt");
 
@@ -256,30 +256,30 @@ namespace Headless.AtrapalhanciaHandler
 
                     }
 
-                    if (req.HttpMethod == "GET" && req.Url.AbsolutePath.StartsWith("/currentscreenshot.png") && External.CurrentScreenshotPath != "")
-                    {
-                        resp.ContentType = "image/png";
-                        resp.ContentEncoding = Encoding.UTF8;
-                        using (Stream source = new FileStream(External.CurrentScreenshotPath + "/current.png", FileMode.Open, FileAccess.Read, FileShare.Read))
-                        {
-                            resp.ContentLength64 = source.Length;
-                            byte[] buffer = new byte[2048];
-                            int bytesRead;
-                            while ((bytesRead = source.Read(buffer, 0, buffer.Length)) > 0)
-                            {
-                                try
-                                {
-                                    resp.OutputStream.WriteAsync(buffer, 0, bytesRead).GetAwaiter().GetResult();
-                                }
-                                catch (HttpListenerException)
-                                {
-                                    break;
-                                }
-                            }
-                        }
-                        resp.Close();
-                        return;
-                    }
+                    //if (req.HttpMethod == "GET" && req.Url.AbsolutePath.StartsWith("/currentscreenshot.png") && External.CurrentScreenshotPath != "")
+                    //{
+                    //    resp.ContentType = "image/png";
+                    //    resp.ContentEncoding = Encoding.UTF8;
+                    //    using (Stream source = new FileStream(External.CurrentScreenshotPath + "/current.png", FileMode.Open, FileAccess.Read, FileShare.Read))
+                    //    {
+                    //        resp.ContentLength64 = source.Length;
+                    //        byte[] buffer = new byte[2048];
+                    //        int bytesRead;
+                    //        while ((bytesRead = source.Read(buffer, 0, buffer.Length)) > 0)
+                    //        {
+                    //            try
+                    //            {
+                    //                resp.OutputStream.WriteAsync(buffer, 0, bytesRead).GetAwaiter().GetResult();
+                    //            }
+                    //            catch (HttpListenerException)
+                    //            {
+                    //                break;
+                    //            }
+                    //        }
+                    //    }
+                    //    resp.Close();
+                    //    return;
+                    //}
 
                     if(req.HttpMethod == "GET" && req.Url.AbsolutePath.StartsWith("/request-socket"))
                     {
@@ -390,7 +390,7 @@ namespace Headless.AtrapalhanciaHandler
                         }
                         var socketId = connectUrlSplit.ElementAt(0);
                         var game = connectUrlSplit.ElementAt(1);
-                        var team = connectUrlSplit.ElementAt(2);
+                        var guid = connectUrlSplit.ElementAt(2);
 
                         var requestBody = GetRequestBodyJSON(req);
                         var claims = TokenDecoder.DecodeToken(requestBody["token"]);
@@ -428,7 +428,10 @@ namespace Headless.AtrapalhanciaHandler
                                 }
                             }
 
-                            ((GameBehavior)(SocketServer.GetConnection(ip).Behavior)).ChannelName = channel;
+                            var BroadcasterSocket = ((GameBehavior)(SocketServer.GetConnection(ip).Behavior));
+                            BroadcasterSocket.ChannelName = channel;
+                            SocketServer.AddServiceAlias(BroadcasterSocket.Route, channel);
+
                             SocketServer.SendMessageAsync(ip, "authenticated").GetAwaiter().GetResult();
                             RespondJSON(ref resp, Encoding.UTF8.GetBytes("Connected!"));
                             return;

@@ -15,10 +15,16 @@ namespace AtrapalhanciaWebSocket
 
         private ConcurrentDictionary<string, ServiceConnection<BaseServiceBehavior>> ServiceConnections = new ConcurrentDictionary<string, ServiceConnection<BaseServiceBehavior>>();
         private ConcurrentDictionary<string, BaseServiceBehavior> Services = new ConcurrentDictionary<string, BaseServiceBehavior>(); //TODO eventually DateTime will be replaced by something useful?
+        private ConcurrentDictionary<string, string> ServiceAlias = new ConcurrentDictionary<string, string>();
 
         public void AddService<T>(T behavior) where T : BaseServiceBehavior
         {
             Services[behavior.Route] = behavior;
+        }
+
+        public void AddServiceAlias(string route, string alias)
+        {
+            ServiceAlias[alias] = route;
         }
 
         public bool ServiceExists(string route)
@@ -34,7 +40,7 @@ namespace AtrapalhanciaWebSocket
         private void AddConnection(string ip, TcpClient client, BaseServiceBehavior behavior)
         {
             ServiceConnections[ip] = ServiceConnection.Create(client, behavior);
-            ServiceConnections[ip].Behavior.OnOpenEvent.Invoke(null, EventArgs.Empty);
+            ((IServiceBehaviorEventsInvoker)ServiceConnections[ip].Behavior).InvokeOpenEvent();
         }
 
         public ServiceConnection<BaseServiceBehavior> GetConnection(string ip)
@@ -51,7 +57,7 @@ namespace AtrapalhanciaWebSocket
         {
             if (ServiceConnections.Remove(ip, out var connection))
             {
-                connection.Behavior.OnCloseEvent.Invoke(null, EventArgs.Empty);
+                ((IServiceBehaviorEventsInvoker)connection.Behavior).InvokeCloseEvent();
             }
         }
 
@@ -117,6 +123,14 @@ namespace AtrapalhanciaWebSocket
         public async Task BroadcastServiceAsync(string serviceRoute, string message)
         {
             var connections = ServiceConnections.Where((kvp) => kvp.Value.Behavior.Route == serviceRoute).ToArray();
+            if (connections.Length == 0)
+            {
+                if (ServiceAlias.TryGetValue(serviceRoute, out var routeFromAlias))
+                {
+                    connections = ServiceConnections.Where((kvp) => kvp.Value.Behavior.Route == routeFromAlias).ToArray();
+                }
+            }
+
             foreach (var connection in connections)
             {
                 await SendMessageAsync(connection.Key, message);
@@ -281,7 +295,7 @@ namespace AtrapalhanciaWebSocket
                         decoded[i] = (byte)(bytes[offset + i] ^ masks[i % 4]);
 
                     string text = Encoding.UTF8.GetString(decoded);
-                    behavior.OnMessageEvent.Invoke(null, text);
+                    ((IServiceBehaviorEventsInvoker)behavior).InvokeMessageEvent(text);
 
                     Console.WriteLine("Message: " + text);
 

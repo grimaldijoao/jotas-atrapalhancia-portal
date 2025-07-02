@@ -18,7 +18,7 @@ namespace TwitchHandler
 {
     public class Twitch : IDisposable
     {
-        private string ChannelName;
+        public string ChannelName { get; private set; }
         private string BroadcasterId;
         private string AccessToken;
 
@@ -45,9 +45,9 @@ namespace TwitchHandler
 
         private Dictionary<string, CreateCustomRewardsRequest> CurrentRewards = new Dictionary<string, CreateCustomRewardsRequest>();
 
-        private AlienInvasion Invasion = new AlienInvasion(); //TODO generic<T> module adder instead of everyone having this? lol
-
         private Dictionary<string, User> ConnectedUsers = new Dictionary<string, User>();
+
+        public event EventHandler<User> OnAtrapalhanciaUserCreated;
 
         public Twitch(string broadcaster_id, string channel, string accessToken)
         {
@@ -55,7 +55,6 @@ namespace TwitchHandler
             BroadcasterId = broadcaster_id;
             AccessToken = accessToken;
         }
-
 
         public void Connect()
         {
@@ -124,17 +123,9 @@ namespace TwitchHandler
             var userData = api.Helix.Users.GetUsersAsync(logins: new List<string>() { username }).GetAwaiter().GetResult().Users[0];
             Console.WriteLine(username, "portou");
 
-            if (External.SendToOverlay.TryGetValue(ChannelName, out var SendToOverlay))
-            {
-                SendToOverlay(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
-                {
-                    username = userData.DisplayName,
-                    profile_pic = userData.ProfileImageUrl,
-                    event_name = "porta"
-                })));
-            }
-
             var user = new User(username, userData.ProfileImageUrl);
+
+            OnAtrapalhanciaUserCreated.Invoke(this, user);
 
             ConnectedUsers[username] = user;
 
@@ -303,16 +294,16 @@ namespace TwitchHandler
 
         private void Client_OnMessageReceived(object sender, OnMessageReceivedArgs e)
         {
-            var messageSplit = e.ChatMessage.Message.ToLower().Split(' ');
-            foreach (var word in messageSplit)
-            {
-                if(word.Contains("rene"))
-                {
-                    Console.WriteLine("Rene Mentioned!");
-                    Invasion.ReneMentioned();
-                    break;
-                }
-            }
+            //var messageSplit = e.ChatMessage.Message.ToLower().Split(' ');
+            //foreach (var word in messageSplit)
+            //{
+            //    if(word.Contains("rene"))
+            //    {
+            //        Console.WriteLine("Rene Mentioned!");
+            //        Invasion.ReneMentioned();
+            //        break;
+            //    }
+            //}
 
             TryFirstJoin(e.ChatMessage.Username);
         }

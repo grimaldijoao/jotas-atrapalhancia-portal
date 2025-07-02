@@ -66,13 +66,19 @@ namespace Headless.AtrapalhanciaHandler
 
 		protected override void OnOpen()
 		{
-			OnConnectionOpen.Invoke(this, EventArgs.Empty);
+			if(OnConnectionOpen != null)
+			{
+				OnConnectionOpen.Invoke(this, EventArgs.Empty);
+			}
 
         }
 
 		protected override void OnClose()
 		{
-            OnConnectionClosed.Invoke(this, EventArgs.Empty);
+			if(OnConnectionClosed != null)
+			{
+				OnConnectionClosed.Invoke(this, EventArgs.Empty);
+			}
 
         }
 
@@ -99,7 +105,9 @@ namespace Headless.AtrapalhanciaHandler
 				var gameName = messageArgs[1].Replace(".dll", "");
 				if (File.Exists(Path.Combine(Environment.CurrentDirectory, $"Atrapalhancias/{gameName}.dll")))
 				{
-					SendAsync($"conectado/test");
+					var routeParams = Route.Split('/');
+					var guid = routeParams.Last();
+					SendAsync($"conectado/{guid}");
 				}
 				else
 				{
