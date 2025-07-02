@@ -190,6 +190,9 @@ namespace Headless.AtrapalhanciaHandler
             if (!SocketServer.ServiceExists($"/channel/${channel}"))
             {
 				SocketServer.AddService(new GameBehavior($"/channel/${channel}"));
+				//TODO remove service and alias (maybe auto on timer?)
+
+
                 //server.AddWebSocketService("/channel/" + channel, () => new GameService(onGameConnectionChanged, channel));
                 //server.AddWebSocketService("/channel/" + channel + "/overlay", () => new OverlayService(onOverlayConnected, channel));
                 //server.AddWebSocketService("/channel/" + channel + "/streamdeck", () => new StreamDeckService(obsSocket, channel));

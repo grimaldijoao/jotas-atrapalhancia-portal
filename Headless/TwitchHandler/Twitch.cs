@@ -24,23 +24,9 @@ namespace TwitchHandler
 
         string clientId = "fzrpx1kxpqk3cyklu4uhw9q0mpux2y";
         string bot_access_token = File.ReadAllText("bot_access_token.txt");
+
         TwitchClient client;
-        TwitchAPI _api;
-        TwitchAPI api
-        {
-            get
-            {
-                return _api;
-            }
-            set
-            {
-                if(value == null)
-                {
-                    Console.WriteLine($"wtf null api {ChannelName} {BroadcasterId}");
-                }
-                _api = value;
-            }
-        }
+        TwitchAPI api;
         EventSub eventSub;
 
         private Dictionary<string, CreateCustomRewardsRequest> CurrentRewards = new Dictionary<string, CreateCustomRewardsRequest>();
