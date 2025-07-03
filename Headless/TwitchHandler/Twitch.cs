@@ -269,7 +269,7 @@ namespace TwitchHandler
             TryFirstJoin(e.ChatMessage.Username);
             if(e.ChatMessage.Message == "jump")
             {
-                ConnectedUsers[e.ChatMessage.Username].Atrapalhate(e.ChatMessage.Channel, "Jump");
+                ConnectedUsers[e.ChatMessage.Username].Atrapalhate(e.ChatMessage.Channel, "jump");
             }
         }
 
