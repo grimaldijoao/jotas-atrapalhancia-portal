@@ -182,11 +182,12 @@ namespace TwitchHandler
                 {
                     try
                     {
+                        Console.WriteLine($"Actually removing {CurrentRewards[rewardId].Title} on twitch for {ChannelName}");
                         await api.Helix.ChannelPoints.DeleteCustomRewardAsync(BroadcasterId, rewardId);
                     }
                     catch (BadRequestException ex)
                     {
-                        Console.WriteLine($"Failed to delete reward {rewardId}: {ex.Message}");
+                        Console.WriteLine($"Failed to delete {ChannelName} reward {rewardId}: {ex.Message}");
                     }
                 });
 
@@ -266,6 +267,10 @@ namespace TwitchHandler
         private void Client_OnMessageReceived(object sender, OnMessageReceivedArgs e)
         {
             TryFirstJoin(e.ChatMessage.Username);
+            if(e.ChatMessage.Message == "jump")
+            {
+                ConnectedUsers[e.ChatMessage.Username].Atrapalhate(e.ChatMessage.Channel, "Jump");
+            }
         }
 
         private void Client_OnUserJoined(object sender, OnUserJoinedArgs e)

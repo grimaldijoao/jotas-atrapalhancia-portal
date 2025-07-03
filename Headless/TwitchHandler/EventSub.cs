@@ -81,6 +81,7 @@ namespace TwitchHandler
                                     var redeem = JsonConvert.DeserializeObject<RewardEvent>(message.payload.ToString());
                                     if (redeem != null && ChatRewardRedeemEvents.TryGetValue(redeem.Event.BroadcasterUserLogin, out var eventCaller))
                                     {
+                                        Console.WriteLine($"Mandando redeem pro {redeem.Event.BroadcasterUserLogin} - {redeem.Event.Reward.Title}");
                                         eventCaller(redeem);
                                     }
                                 }

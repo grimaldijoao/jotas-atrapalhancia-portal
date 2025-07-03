@@ -24,6 +24,7 @@ namespace AtrapalhanciaWebSocket
 
         public void AddServiceAlias(string route, string alias)
         {
+            Console.WriteLine($"{alias} added for {route}");
             ServiceAlias[alias] = route;
         }
 

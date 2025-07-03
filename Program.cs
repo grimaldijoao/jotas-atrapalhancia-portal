@@ -46,6 +46,7 @@ namespace JotasAtrapalhanciaPortal
 
                 var dbRewards = TwitchReward.GetRewardsByChannelName(channel);
 
+                Console.WriteLine($"Deleting {channel} rewards on connect");
                 foreach (var reward in dbRewards)
                 {
                     if (TwitchListeners[channel].DeleteRedeemReward(reward.Id).GetAwaiter().GetResult())
@@ -99,6 +100,7 @@ namespace JotasAtrapalhanciaPortal
                 {
                     TwitchListeners[gameBehavior.ChannelName].Dispose();
                     TwitchListeners.Remove(gameBehavior.ChannelName);
+                    Console.WriteLine($"Deleting {gameBehavior.ChannelName} rewards");
                     TwitchReward.DeleteRewardsByChannelName(gameBehavior.ChannelName);
                 }
             }
