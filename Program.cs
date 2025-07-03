@@ -9,7 +9,6 @@ namespace JotasAtrapalhanciaPortal
     {
         private static Dictionary<string, Twitch> TwitchListeners = new Dictionary<string, Twitch>();
         private static TwitchAtrapalhanciaBuilder TwitchAtrapalhanciaBuilder = new TwitchAtrapalhanciaBuilder();
-
         private static WebSocketServerManager SocketManager = new WebSocketServerManager();
 
         static void Main(string[] args)
@@ -37,7 +36,6 @@ namespace JotasAtrapalhanciaPortal
             {
                 if (!TwitchListeners.TryGetValue(channel, out var twitchConnection))
                 {
-                    TwitchListeners.Remove(channel);
                     twitchConnection = new Twitch(broadcaster_id, channel, access_token);
 
                     twitchConnection.OnAtrapalhanciaUserCreated += TwitchConnection_OnAtrapalhanciaUserCreated;

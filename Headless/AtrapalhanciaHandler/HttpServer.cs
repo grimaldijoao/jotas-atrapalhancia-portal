@@ -296,7 +296,8 @@ namespace Headless.AtrapalhanciaHandler
                             return;
                         }
 
-                        OnSocketCreationRequested.Invoke(this, connectUrlSplit.ElementAt(0));
+                        var handler = OnSocketCreationRequested;
+                        handler.Invoke(this, connectUrlSplit.ElementAt(0));
                         RespondJSON(ref resp, Ok());
                         return;
                     }
@@ -418,7 +419,8 @@ namespace Headless.AtrapalhanciaHandler
                             {
                                 try
                                 {
-                                    OnGameConnected.Invoke(this, new GameConnectedEventArgs(broadcasterId, channel, accessToken, game, SocketServer.GetConnection(ip).Behavior.Route));
+                                    var handler = OnGameConnected;
+                                    handler.Invoke(this, new GameConnectedEventArgs(broadcasterId, channel, accessToken, game, SocketServer.GetConnection(ip).Behavior.Route));
                             
                                 }
                                 catch (Exception e)

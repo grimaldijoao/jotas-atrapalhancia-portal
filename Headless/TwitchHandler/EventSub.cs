@@ -1,6 +1,7 @@
 ﻿using JotasTwitchPortal.JSON;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text;
 
@@ -21,55 +22,86 @@ namespace TwitchHandler
         public JObject payload { get; set;}
     }
 
-    public class EventSub : IDisposable
+    public static class EventSub
     {
-        public event EventHandler<RewardEvent> OnChatRewardRedeemed;
-        public event EventHandler<string> OnConnected;
-        public string SessionId;
-        ClientWebSocket ws = new ClientWebSocket();
+        private static ConcurrentDictionary<string, Action<RewardEvent>> ChatRewardRedeemEvents = new ConcurrentDictionary<string, Action<RewardEvent>>();
+        static ClientWebSocket ws = new ClientWebSocket();
 
-        public EventSub()
+        public static string? SessionId { get; private set; }
+        public static bool Connected { get; private set; }
+
+        private static CancellationTokenSource ReconnectToken = new CancellationTokenSource();
+
+        public static void RegisterChannel(string channelName, Action<RewardEvent> OnChatRewardRedeemed)
         {
-
+            ChatRewardRedeemEvents[channelName] = OnChatRewardRedeemed;
         }
 
-        public async void Connect()
+        public static void RemoveChannel(string channelName)
         {
-            await ws.ConnectAsync(new Uri("wss://eventsub.wss.twitch.tv/ws"), CancellationToken.None);
+            ChatRewardRedeemEvents.Remove(channelName, out _);
+        }
 
-            var buffer = new byte[4096];
+        public static void StaleReconnectionToken()
+        {
+            ReconnectToken.Cancel();
+        }
 
-            while (ws.State == WebSocketState.Open)
+        public static async Task ConnectWithRetryAsync()
+        {
+            while (true)
             {
-                var result = await ws.ReceiveAsync(buffer, CancellationToken.None);
-                var json = Encoding.UTF8.GetString(buffer, 0, result.Count);
-
-                if(json != null)
+                using (ws = new ClientWebSocket())
                 {
-                    var message = JsonConvert.DeserializeObject<TwitchMessage>(json)!;
-                    if (message != null)
+                    try
                     {
-                        if (message.metadata.message_type == "session_welcome")
+                        Console.WriteLine("Connecting to EventSub...");
+                        await ws.ConnectAsync(new Uri("wss://eventsub.wss.twitch.tv/ws"), CancellationToken.None);
+
+                        Connected = true;
+
+                        var buffer = new byte[4096];
+
+                        while (ws.State == WebSocketState.Open)
                         {
-                            SessionId = message.payload.Value<JObject>("session")!.Value<string>("id")!;
-                            Console.WriteLine(json);
-                            OnConnected.Invoke(this, SessionId);
-                            //await ws.SendAsync(new ArraySegment<byte>(/**/, WebSocketMessageType.Text, true, CancellationToken.None);
-                        }
-                        else if(message.metadata.message_type == "notification" && message.metadata.subscription_type == "channel.channel_points_custom_reward_redemption.add")
-                        {
-                            var redeem = JsonConvert.DeserializeObject<RewardEvent>(message.payload.ToString())!;
-                            OnChatRewardRedeemed.Invoke(this, redeem);
+                            var result = await ws.ReceiveAsync(buffer, CancellationToken.None);
+                            var json = Encoding.UTF8.GetString(buffer, 0, result.Count);
+
+                            if (!string.IsNullOrWhiteSpace(json))
+                            {
+                                var message = JsonConvert.DeserializeObject<TwitchMessage>(json);
+                                if (message?.metadata?.message_type == "session_welcome")
+                                {
+                                    SessionId = message.payload["session"]?.Value<string>("id");
+                                    Console.WriteLine("EventSub connected with session ID: " + SessionId);
+                                }
+                                else if (message.metadata.message_type == "notification" &&
+                                         message.metadata.subscription_type == "channel.channel_points_custom_reward_redemption.add")
+                                {
+                                    var redeem = JsonConvert.DeserializeObject<RewardEvent>(message.payload.ToString());
+                                    if (redeem != null && ChatRewardRedeemEvents.TryGetValue(redeem.Event.BroadcasterUserLogin, out var eventCaller))
+                                    {
+                                        eventCaller(redeem);
+                                    }
+                                }
+                            }
                         }
                     }
-                }
-            }
-        }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("EventSub connection error: " + ex.Message);
+                    }
 
-        public void Dispose()
-        {
-            ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None).GetAwaiter().GetResult();
-            ws.Dispose();
+                    Connected = false;
+                    SessionId = null;
+                    Console.WriteLine("EventSub connection lost. Waiting for reconnection");
+                }
+
+                var localToken = ReconnectToken.Token;
+                await Task.Delay(60000, localToken);
+
+                ReconnectToken = new CancellationTokenSource();
+            }
         }
     }
 }
