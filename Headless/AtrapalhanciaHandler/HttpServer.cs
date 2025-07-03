@@ -408,10 +408,11 @@ namespace Headless.AtrapalhanciaHandler
                         var broadcasterId = broadcaster.TwitchRelation.BroadcasterId;
                         var accessToken = broadcaster.TwitchRelation.AccessToken;
 
-                        IPAddress ipAddress = req.RemoteEndPoint!.Address;
-                        if (IPAddress.IsLoopback(ipAddress)) ipAddress = IPAddress.Loopback; // Converts ::1 → 127.0.0.1
+                        var ip = req.Headers["X-Forwarded-For"];
 
-                        var ip = ipAddress.ToString();
+                        Console.WriteLine("RemoteEndPoint: " + req.RemoteEndPoint?.ToString());
+                        Console.WriteLine("X-Forwarded-For: " + req.Headers["X-Forwarded-For"]);
+                        Console.WriteLine("All Headers: " + JsonConvert.SerializeObject(req.Headers));
 
                         if (SocketServer.ConnectionExists(ip))
                         {
