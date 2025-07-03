@@ -61,7 +61,7 @@ namespace TwitchHandler
                 ThrottlingPeriod = TimeSpan.FromSeconds(30)
             };
 
-            client = new TwitchClient(new WebSocketClient(clientOptions), TwitchLib.Client.Enums.ClientProtocol.WebSocket, new StubLogger());
+            client = new TwitchClient(new WebSocketClient(clientOptions), TwitchLib.Client.Enums.ClientProtocol.WebSocket);
             client.Initialize(credentials, ChannelName);
 
             api = new TwitchAPI();
@@ -253,7 +253,7 @@ namespace TwitchHandler
 
         private void Client_OnLog(object sender, OnLogArgs e)
         {
-            Console.WriteLine($"{e.DateTime.ToString()}: {e.BotUsername} - {e.Data}");
+            //Console.WriteLine($"{e.DateTime.ToString()}: {e.BotUsername} - {e.Data}");
         }
 
         private void Client_OnJoinedChannel(object sender, OnJoinedChannelArgs e)
