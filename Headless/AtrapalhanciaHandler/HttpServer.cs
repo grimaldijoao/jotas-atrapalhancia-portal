@@ -408,7 +408,7 @@ namespace Headless.AtrapalhanciaHandler
                         var broadcasterId = broadcaster.TwitchRelation.BroadcasterId;
                         var accessToken = broadcaster.TwitchRelation.AccessToken;
 
-                        var ip = req.Headers["X-Forwarded-For"];
+                        var ip = req.Headers["X-Forwarded-For"] ?? ((IPEndPoint)req.RemoteEndPoint!).Address.ToString();
 
                         Console.WriteLine("RemoteEndPoint: " + req.RemoteEndPoint?.ToString());
                         Console.WriteLine("X-Forwarded-For: " + req.Headers["X-Forwarded-For"]);

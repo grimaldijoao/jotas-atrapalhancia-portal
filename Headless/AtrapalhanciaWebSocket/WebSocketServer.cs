@@ -138,14 +138,8 @@ namespace AtrapalhanciaWebSocket
             }
         }
 
-        private async Task<BaseServiceBehavior> HandleHandshake(TcpClient client, NetworkStream stream, CancellationToken handshakeTimer)
+        private async Task<BaseServiceBehavior> HandleHandshake(TcpClient client, string request, NetworkStream writeOnlyStream, CancellationToken handshakeTimer)
         {
-            var buffer = new byte[1024];
-
-            // Read initial handshake request
-            int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
-            string request = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-
             if (!Regex.IsMatch(request, "^GET", RegexOptions.IgnoreCase))
             {
                 client.Close();
@@ -189,7 +183,7 @@ namespace AtrapalhanciaWebSocket
                 "Sec-WebSocket-Accept: " + acceptKey + "\r\n\r\n";
 
             byte[] responseBytes = Encoding.UTF8.GetBytes(response);
-            await stream.WriteAsync(responseBytes, 0, responseBytes.Length);
+            await writeOnlyStream.WriteAsync(responseBytes, 0, responseBytes.Length);
 
             Console.WriteLine("Handshake response sent.");
 
@@ -315,29 +309,32 @@ namespace AtrapalhanciaWebSocket
             Console.WriteLine("A client connected.");
 
             using var stream = client.GetStream();
-            using var reader = new StreamReader(stream, Encoding.UTF8, leaveOpen: true);
 
-            // Read the HTTP headers
-            string? line;
+            var buffer = new byte[1024];
+            int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+            string request = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+
             string? forwardedFor = null;
-            while (!string.IsNullOrEmpty(line = reader.ReadLine()))
+
+            foreach (var rawLine in request.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None))
             {
-                if (line.StartsWith("X-Forwarded-For:", StringComparison.OrdinalIgnoreCase))
+                if (rawLine.StartsWith("X-Forwarded-For:", StringComparison.OrdinalIgnoreCase))
                 {
-                    forwardedFor = line.Split(':', 2)[1].Trim();
+                    forwardedFor = rawLine.Split(':', 2)[1].Trim();
                 }
 
-                if (line == "") break; // End of headers
+                if (string.IsNullOrWhiteSpace(rawLine))
+                    break; // End of headers
             }
 
-            var ip = forwardedFor ?? ((IPEndPoint)client.Client.RemoteEndPoint!).Address.ToString();
-            Console.WriteLine($"Client IP: {ip?.Split(',')[0].Trim()}");
+            var ip = forwardedFor?.Split(',')[0].Trim() ?? ((IPEndPoint)client.Client.RemoteEndPoint!).Address.ToString();
+            Console.WriteLine($"Client IP: {ip}");
 
             try
             {
                 // Step 1: Perform the handshake
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-                var handshakeTask = HandleHandshake(client, stream, cts.Token);
+                var handshakeTask = HandleHandshake(client, request, stream, cts.Token);
                 var completed = await Task.WhenAny(handshakeTask, Task.Delay(Timeout.Infinite, cts.Token));
 
                 if (completed != handshakeTask)
