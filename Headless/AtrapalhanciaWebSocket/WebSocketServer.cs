@@ -317,6 +317,9 @@ namespace AtrapalhanciaWebSocket
             using var stream = client.GetStream();
             var ip = ((IPEndPoint)client.Client.RemoteEndPoint!).Address.ToString();
 
+            Console.WriteLine($"RemoteEndPoint: {client.Client.RemoteEndPoint}");
+            Console.WriteLine($"LocalEndPoint: {client.Client.LocalEndPoint}");
+
             try
             {
                 // Step 1: Perform the handshake
