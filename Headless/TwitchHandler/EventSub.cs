@@ -35,11 +35,13 @@ namespace TwitchHandler
         public static void RegisterChannel(string channelName, Action<RewardEvent> OnChatRewardRedeemed)
         {
             ChatRewardRedeemEvents[channelName] = OnChatRewardRedeemed;
+            Console.WriteLine($"Registered {channelName} eventsub");
         }
 
         public static void RemoveChannel(string channelName)
         {
             ChatRewardRedeemEvents.Remove(channelName, out _);
+            Console.WriteLine($"Removing {channelName} eventsub");
         }
 
         public static void StaleReconnectionToken()
