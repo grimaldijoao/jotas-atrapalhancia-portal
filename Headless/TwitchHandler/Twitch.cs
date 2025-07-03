@@ -1,6 +1,7 @@
 ﻿using Headless.Shared;
 using InvasionHandler;
 using JotasTwitchPortal.JSON;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -60,7 +61,7 @@ namespace TwitchHandler
                 ThrottlingPeriod = TimeSpan.FromSeconds(30)
             };
 
-            client = new TwitchClient(new WebSocketClient(clientOptions));
+            client = new TwitchClient(new WebSocketClient(clientOptions), TwitchLib.Client.Enums.ClientProtocol.WebSocket, new StubLogger());
             client.Initialize(credentials, ChannelName);
 
             api = new TwitchAPI();
