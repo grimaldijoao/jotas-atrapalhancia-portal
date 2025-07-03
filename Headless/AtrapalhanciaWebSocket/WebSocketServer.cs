@@ -315,10 +315,23 @@ namespace AtrapalhanciaWebSocket
             Console.WriteLine("A client connected.");
 
             using var stream = client.GetStream();
-            var ip = ((IPEndPoint)client.Client.RemoteEndPoint!).Address.ToString();
+            using var reader = new StreamReader(stream, Encoding.UTF8, leaveOpen: true);
 
-            Console.WriteLine($"RemoteEndPoint: {client.Client.RemoteEndPoint}");
-            Console.WriteLine($"LocalEndPoint: {client.Client.LocalEndPoint}");
+            // Read the HTTP headers
+            string? line;
+            string? forwardedFor = null;
+            while (!string.IsNullOrEmpty(line = reader.ReadLine()))
+            {
+                if (line.StartsWith("X-Forwarded-For:", StringComparison.OrdinalIgnoreCase))
+                {
+                    forwardedFor = line.Split(':', 2)[1].Trim();
+                }
+
+                if (line == "") break; // End of headers
+            }
+
+            var ip = forwardedFor ?? ((IPEndPoint)client.Client.RemoteEndPoint!).Address.ToString();
+            Console.WriteLine($"Client IP: {ip?.Split(',')[0].Trim()}");
 
             try
             {
