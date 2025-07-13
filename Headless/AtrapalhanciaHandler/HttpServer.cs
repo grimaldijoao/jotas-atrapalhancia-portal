@@ -9,6 +9,7 @@ using System.Net;
 using System.Text;
 using AtrapalhanciaHandler;
 using AtrapalhanciaWebSocket;
+using Shared.Utils;
 
 namespace Headless.AtrapalhanciaHandler
 {
@@ -210,6 +211,18 @@ namespace Headless.AtrapalhanciaHandler
                         }
 
                         RespondJSON(ref resp, NotFound(), HttpStatusCode.NotFound);
+                        return;
+                    }
+
+                    if(req.HttpMethod == "POST" && req.Url.AbsolutePath.StartsWith("/tiktok-test"))
+                    {
+                        var requestBody = GetRequestBodyJSON(req);
+                        foreach(var kvp in requestBody)
+                        {
+                            TimestampedConsole.Log($"{kvp.Key} - {kvp.Value}");
+                        }
+
+                        RespondJSON(ref resp, Ok(), HttpStatusCode.OK);
                         return;
                     }
 
