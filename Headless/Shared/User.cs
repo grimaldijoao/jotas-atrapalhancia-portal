@@ -1,4 +1,5 @@
 ﻿using Headless.Shared.Interfaces;
+using Shared.Utils;
 
 namespace Headless.Shared
 {
@@ -8,7 +9,7 @@ namespace Headless.Shared
         public string ProfilePic { get; private set; }
 
         private Func<string, string, Task> internal_atrapalhate = (user, msg) => {
-            Console.WriteLine($"{user} tried to atrapalhate without internal function ({msg})");
+            TimestampedConsole.Log($"{user} tried to atrapalhate without internal function ({msg})");
             return Task.CompletedTask;
         };
 
@@ -21,7 +22,7 @@ namespace Headless.Shared
         //? Uma vez alguem no chat falou q a atrapalhancia tava "MTO INSTA", quanto mais coisinhas tiver pra mandar e receber uma atrapalhancia, mais lag, pq esses são os ms que importam, era pra ser no maximo o ms do websocket e fim.
         public void Atrapalhate(string channel, string atrapalhancia)
         {
-            Console.WriteLine($"{UserName} sending {atrapalhancia}");
+            TimestampedConsole.Log($"{UserName} sending {atrapalhancia}");
             internal_atrapalhate(UserName, $"atrapalhancia/{atrapalhancia}/{UserName}/{ProfilePic.Replace("/", "%2F")}");
         }
 

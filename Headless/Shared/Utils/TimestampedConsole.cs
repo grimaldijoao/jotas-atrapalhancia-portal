@@ -10,7 +10,7 @@ namespace Shared.Utils
     {
         public static void Log(string message)
         {
-            Console.WriteLine($"message - {DateTime.Now}");
+            Console.WriteLine($"{message} - {DateTime.Now}");
         }
     }
 }
