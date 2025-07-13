@@ -207,7 +207,6 @@ namespace AtrapalhanciaWebSocket
                         // Send a ping frame (opcode 0x9)
                         byte[] ping = new byte[] { 0x89, 0x00 };
                         await stream.WriteAsync(ping, 0, ping.Length);
-                        Console.WriteLine("Ping sent");
 
                         if ((DateTime.UtcNow - lastPong).TotalSeconds > 60)
                         {
@@ -242,7 +241,6 @@ namespace AtrapalhanciaWebSocket
                 // Handle Pong (opcode 0xA)
                 if (opcode == 0xA)
                 {
-                    Console.WriteLine("Pong received");
                     lastPong = DateTime.UtcNow;
                     continue;
                 }
@@ -306,8 +304,6 @@ namespace AtrapalhanciaWebSocket
 
         private async Task HandleClientAsync(TcpClient client)
         {
-            Console.WriteLine("A client connected.");
-
             using var stream = client.GetStream();
 
             var buffer = new byte[1024];
@@ -328,7 +324,6 @@ namespace AtrapalhanciaWebSocket
             }
 
             var ip = forwardedFor?.Split(',')[0].Trim() ?? ((IPEndPoint)client.Client.RemoteEndPoint!).Address.ToString();
-            Console.WriteLine($"Client IP: {ip}");
 
             try
             {
@@ -375,7 +370,6 @@ namespace AtrapalhanciaWebSocket
             while (true)
             {
                 TcpClient client = await server.AcceptTcpClientAsync();
-                Console.WriteLine("A client connected.");
 
                 _ = Task.Run(() => HandleClientAsync(client));
             }
