@@ -1,6 +1,7 @@
 ﻿using AtrapalhanciaDatabase.Tables;
 using Headless.AtrapalhanciaHandler;
 using Headless.Shared;
+using Shared.Utils;
 using TwitchHandler;
 
 namespace JotasAtrapalhanciaPortal
@@ -45,7 +46,7 @@ namespace JotasAtrapalhanciaPortal
 
                 var dbRewards = TwitchReward.GetRewardsByChannelName(channel);
 
-                Console.WriteLine($"Deleting {channel} rewards on connect");
+                TimestampedConsole.Log($"Deleting {channel} rewards on connect");
                 foreach (var reward in dbRewards)
                 {
                     if (TwitchListeners[channel].DeleteRedeemReward(reward.Id).GetAwaiter().GetResult())
@@ -70,11 +71,11 @@ namespace JotasAtrapalhanciaPortal
             }
             catch (TwitchLib.Api.Core.Exceptions.BadRequestException e)
             {
-                Console.WriteLine($"{channel} twitch connection failed! ({e.Message})");
+                TimestampedConsole.Log($"{channel} twitch connection failed! ({e.Message})");
                 throw;
             }
 
-            Console.WriteLine($"{args.Route} sendToBroadcaster registered!");
+            TimestampedConsole.Log($"{args.Route} sendToBroadcaster registered!");
         }
 
         private static void HttpServer_OnSocketCreationRequested(object? sender, string guid)
@@ -90,7 +91,7 @@ namespace JotasAtrapalhanciaPortal
         {
             var gameBehavior = sender as GameBehavior;
 
-            Console.WriteLine($"{gameBehavior.ChannelName ?? gameBehavior.Route} disconnected!");
+            TimestampedConsole.Log($"{gameBehavior.ChannelName ?? gameBehavior.Route} disconnected!");
 
             if (gameBehavior.ChannelName != null)
             {
@@ -99,7 +100,7 @@ namespace JotasAtrapalhanciaPortal
                 {
                     TwitchListeners[gameBehavior.ChannelName].Dispose();
                     TwitchListeners.Remove(gameBehavior.ChannelName);
-                    Console.WriteLine($"Deleting {gameBehavior.ChannelName} rewards");
+                    TimestampedConsole.Log($"Deleting {gameBehavior.ChannelName} rewards");
                     TwitchReward.DeleteRewardsByChannelName(gameBehavior.ChannelName);
                 }
             }

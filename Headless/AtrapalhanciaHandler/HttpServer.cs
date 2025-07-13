@@ -416,10 +416,6 @@ namespace Headless.AtrapalhanciaHandler
 
                         var ip = req.Headers["X-Forwarded-For"] ?? localIp.ToString();
 
-                        Console.WriteLine("RemoteEndPoint: " + req.RemoteEndPoint?.ToString());
-                        Console.WriteLine("X-Forwarded-For: " + req.Headers["X-Forwarded-For"]);
-                        Console.WriteLine("All Headers: " + JsonConvert.SerializeObject(req.Headers));
-
                         if (SocketServer.ConnectionExists(ip))
                         {
                             if(OnGameConnected != null)

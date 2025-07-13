@@ -1,6 +1,7 @@
 ﻿using JotasTwitchPortal.JSON;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Shared.Utils;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text;
@@ -69,7 +70,7 @@ namespace TwitchHandler
             {
                 try
                 {
-                    Console.WriteLine("Connecting to EventSub...");
+                    TimestampedConsole.Log("Connecting to EventSub...");
                     await webSocketClient.ConnectAsync(new Uri("wss://eventsub.wss.twitch.tv/ws"), CancellationToken.None);
 
                     var buffer = new byte[4096];
@@ -89,7 +90,7 @@ namespace TwitchHandler
                             if (message?.metadata?.message_type == "session_welcome")
                             {
                                 SessionId = message.payload["session"]?.Value<string>("id");
-                                Console.WriteLine("EventSub connected with session ID: " + SessionId);
+                                TimestampedConsole.Log("EventSub connected with session ID: " + SessionId);
                                 connectionEstablishCompleted.TrySetResult(true);
                             }
                             else if (message.metadata.message_type == "notification" &&
@@ -98,7 +99,7 @@ namespace TwitchHandler
                                 var redeem = JsonConvert.DeserializeObject<RewardEvent>(message.payload.ToString());
                                 if (redeem != null && chatRewardRedeemEvents.TryGetValue(redeem.Event.BroadcasterUserLogin, out var eventCaller))
                                 {
-                                    Console.WriteLine($"Mandando redeem pro {redeem.Event.BroadcasterUserLogin} - {redeem.Event.Reward.Title}");
+                                    TimestampedConsole.Log($"Mandando redeem pro {redeem.Event.BroadcasterUserLogin} - {redeem.Event.Reward.Title}");
                                     eventCaller(redeem);
                                 }
                             }
@@ -107,12 +108,12 @@ namespace TwitchHandler
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"EventSub connection error: {ex.Message}");
+                    TimestampedConsole.Log($"EventSub connection error: {ex.Message}");
                 }
                 finally
                 {
                     SessionId = null;
-                    Console.WriteLine("EventSub connection lost. Waiting for reconnection...");
+                    TimestampedConsole.Log("EventSub connection lost. Waiting for reconnection...");
                     connectionEstablishCompleted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                     //? Invoke some event to warn the consumer that the global websocket connection was lost, so that it can (optionally) re-try to connect (and then trigger the eventsub http subscribe request)
                 }

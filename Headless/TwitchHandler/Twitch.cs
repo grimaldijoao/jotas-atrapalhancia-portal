@@ -3,6 +3,7 @@ using InvasionHandler;
 using JotasTwitchPortal.JSON;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Shared.Utils;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
@@ -90,16 +91,16 @@ namespace TwitchHandler
                     accessToken: AccessToken
                 ).GetAwaiter().GetResult();
 
-                rewardSubscriptionId = result.Subscriptions.Last().Id;
+                rewardSubscriptionId = result.Subscriptions.First().Id;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"💥 Exception during EventSub subscription: {ex.Message}");
+                TimestampedConsole.Log($"💥 Exception during EventSub subscription: {ex.Message}");
             }
 
             EventSub.RegisterChannel(ChannelName, EventSub_OnChatRewardRedeemed);
 
-            Console.WriteLine($"{ChannelName} connected!");
+            TimestampedConsole.Log($"{ChannelName} connected!");
         }
 
         private void EventSub_OnChatRewardRedeemed(RewardEvent rewardEvent)
@@ -162,7 +163,7 @@ namespace TwitchHandler
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to delete reward {rewardId}: {ex.Message}");
+                TimestampedConsole.Log($"Failed to delete reward {rewardId}: {ex.Message}");
                 return false;
             }
         }
@@ -177,12 +178,12 @@ namespace TwitchHandler
                 {
                     try
                     {
-                        Console.WriteLine($"Actually removing {CurrentRewards[rewardId].Title} on twitch for {ChannelName}");
+                        TimestampedConsole.Log($"Actually removing {CurrentRewards[rewardId].Title} on twitch for {ChannelName}");
                         await api.Helix.ChannelPoints.DeleteCustomRewardAsync(BroadcasterId, rewardId);
                     }
                     catch (BadRequestException ex)
                     {
-                        Console.WriteLine($"Failed to delete {ChannelName} reward {rewardId}: {ex.Message}");
+                        TimestampedConsole.Log($"Failed to delete {ChannelName} reward {rewardId}: {ex.Message}");
                     }
                 });
 
@@ -224,7 +225,7 @@ namespace TwitchHandler
                     }
                     catch (BadRequestException ex)
                     {
-                        Console.WriteLine($"Failed to create reward '{key}': {ex.Message}");
+                        TimestampedConsole.Log($"Failed to create reward '{key}': {ex.Message}");
                         cts.Cancel();
                         throw;
                     }
@@ -253,8 +254,8 @@ namespace TwitchHandler
         private void Client_OnJoinedChannel(object sender, OnJoinedChannelArgs e)
         {
             var userData = api.Helix.Users.GetUsersAsync(logins: new List<string>() { e.Channel, "umbotas" }).GetAwaiter().GetResult().Users;
-            
-            Console.WriteLine($"Connected to twitch channel {e.Channel}!");
+
+            TimestampedConsole.Log($"Connected to twitch channel {e.Channel}!");
 
             SendChatMessage("🤖🤝👽", (TwitchClient)sender);
         }

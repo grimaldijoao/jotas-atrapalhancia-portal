@@ -3,6 +3,7 @@ using Headless.Shared;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OBSWebsocketDotNet;
+using Shared.Utils;
 using System.Text;
 using TwitchLib.Api.Helix.Models.Moderation.CheckAutoModStatus;
 
@@ -84,7 +85,7 @@ namespace Headless.AtrapalhanciaHandler
 
 		protected override void OnMessage(string message)
 		{
-			Console.WriteLine($"Message received: {message}");
+			TimestampedConsole.Log($"Message received: {message}");
 			var messageArgs = message.Split('/');
 
             if (messageArgs.Length == 0)
@@ -111,7 +112,7 @@ namespace Headless.AtrapalhanciaHandler
 				}
 				else
 				{
-					Console.WriteLine($"Atrapalhancia game not found! {Path.Combine(Environment.CurrentDirectory, $"Atrapalhancias/{gameName}.dll")}");
+                    TimestampedConsole.Log($"Atrapalhancia game not found! {Path.Combine(Environment.CurrentDirectory, $"Atrapalhancias/{gameName}.dll")}");
                     Close();
                 }
 			}
@@ -190,7 +191,7 @@ namespace Headless.AtrapalhanciaHandler
             if (!SocketServer.ServiceExists($"/channel/${channel}"))
             {
 				SocketServer.AddService(new GameBehavior($"/channel/${channel}"));
-				//TODO remove service and alias (maybe auto on timer?)
+                //TODO remove service and alias (maybe auto on timer?)
 
 
                 //server.AddWebSocketService("/channel/" + channel, () => new GameService(onGameConnectionChanged, channel));
@@ -198,7 +199,7 @@ namespace Headless.AtrapalhanciaHandler
                 //server.AddWebSocketService("/channel/" + channel + "/streamdeck", () => new StreamDeckService(obsSocket, channel));
                 //server.AddWebSocketService("/channel/" + channel + "/obs", () => new OBSService());
 
-                Console.WriteLine("Websocket registered: /channel/" + channel);
+                TimestampedConsole.Log("Websocket registered: /channel/" + channel);
             }
         }
 
