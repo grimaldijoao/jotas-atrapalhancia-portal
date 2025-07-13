@@ -22,7 +22,6 @@ namespace JotasAtrapalhanciaPortal
             HttpServer.Run(new FirebaseAuthHandler(), SocketManager.SocketServer);
 
             Console.ReadLine();
-
         }
 
         private static void HttpServer_OnGameConnected(object? sender, GameConnectedEventArgs args)

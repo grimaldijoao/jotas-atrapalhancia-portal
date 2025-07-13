@@ -45,14 +45,6 @@ namespace TwitchHandler
 
         public void Connect()
         {
-            if(EventSub.Connected)
-            {
-                EventSub.StaleReconnectionToken();
-            }
-            else
-            {
-                EventSub.ConnectWithRetryAsync();
-            }
 
             ConnectionCredentials credentials = new ConnectionCredentials("umbotas", bot_access_token);
             var clientOptions = new ClientOptions
@@ -75,6 +67,9 @@ namespace TwitchHandler
             {
                 throw new BadRequestException($"Invalid token for {ChannelName}");
             }
+
+            EventSub.AttemptConnection();
+            EventSub.WaitForConnectionAsync().Wait();
 
             client.OnLog += Client_OnLog;
             client.OnUserJoined += Client_OnUserJoined;
@@ -125,7 +120,6 @@ namespace TwitchHandler
                 }
             }
         }
-
 
         public void SendChatMessage(string message, TwitchClient client)
         {
