@@ -81,6 +81,9 @@ namespace TwitchHandler
 
             try
             {
+                TimestampedConsole.Log($"BroadcasterId: {BroadcasterId}");
+                TimestampedConsole.Log($"SessionId: {EventSub.SessionId}");
+                TimestampedConsole.Log($"BroadcasterId: {BroadcasterId}");
                 var result = api.Helix.EventSub.CreateEventSubSubscriptionAsync(
                     "channel.channel_points_custom_reward_redemption.add",
                     "1",
@@ -90,6 +93,8 @@ namespace TwitchHandler
                     clientId: clientId,
                     accessToken: AccessToken
                 ).GetAwaiter().GetResult();
+
+                TimestampedConsole.Log($"Subscriptions length: {result.Subscriptions.Length}");
 
                 rewardSubscriptionId = result.Subscriptions.First().Id;
             }

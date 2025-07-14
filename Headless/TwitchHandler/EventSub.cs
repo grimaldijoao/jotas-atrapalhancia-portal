@@ -84,6 +84,7 @@ namespace TwitchHandler
                         else
                         {
                             var json = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                            TimestampedConsole.Log($"EventSub Event {json}");
                             if (string.IsNullOrWhiteSpace(json)) continue;
 
                             var message = JsonConvert.DeserializeObject<TwitchMessage>(json);
