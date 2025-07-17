@@ -10,6 +10,9 @@ using System.Text;
 using AtrapalhanciaHandler;
 using AtrapalhanciaWebSocket;
 using Shared.Utils;
+using AtrapalhanciaHandler.Webhook;
+using Newtonsoft.Json.Linq;
+using Shared.JSON;
 
 namespace Headless.AtrapalhanciaHandler
 {
@@ -87,18 +90,22 @@ namespace Headless.AtrapalhanciaHandler
         private ITokenDecoder TokenDecoder;
         private HttpListener? listener;
         private WebSocketServer SocketServer;
+        private string WebhookSecret;
+
 
         private long requestCount = 0;
 
         public static event EventHandler<GameConnectedEventArgs>? OnGameConnected;
         public static event EventHandler<string>? OnSocketCreationRequested;
+        public static event Action<TwitchRewardPayload> OnTwitchRewardPayload;
 
         private string twitch_client_secret = File.ReadAllText("client_secret.txt");
 
-        public HttpServer(ITokenDecoder tokenDecoder, WebSocketServer socketServer)
+        public HttpServer(ITokenDecoder tokenDecoder, WebSocketServer socketServer, string webhookSecret)
         {
             TokenDecoder = tokenDecoder;
             SocketServer = socketServer;
+            WebhookSecret = webhookSecret;
         }
 
         private void AddCORSHeaders(HttpListenerResponse resp)
@@ -147,6 +154,16 @@ namespace Headless.AtrapalhanciaHandler
             resp.Close();
         }
 
+        private void RespondPlainText(ref HttpListenerResponse resp, byte[] text, HttpStatusCode statusCode = HttpStatusCode.OK)
+        {
+            AddCORSHeaders(resp);
+            resp.StatusCode = (int)statusCode;
+            resp.ContentType = "text/plain; charset=utf-8";
+            resp.ContentLength64 = text.Length;
+            resp.OutputStream.WriteAsync(text, 0, text.Length).GetAwaiter().GetResult();
+            resp.Close();
+        }
+
         private Task HandleIncomingConnections()
         {
             bool runServer = true;
@@ -192,6 +209,34 @@ namespace Headless.AtrapalhanciaHandler
                         AddCORSHeaders(resp);
                         resp.StatusCode = (int)HttpStatusCode.NoContent; // 204 No Content
                         resp.Close();
+                        return;
+                    }
+
+                    if(req.HttpMethod == "POST" && req.Url.AbsolutePath.StartsWith("/twitch-reward-eventsub"))
+                    {
+                        if (req.Headers["Twitch-Eventsub-Message-Type"] == "webhook_callback_verification")
+                        {
+                            using (var reader = new StreamReader(req.InputStream, req.ContentEncoding))
+                            {
+                                string bodyAsString = reader.ReadToEnd();
+                                var json = JObject.Parse(bodyAsString);
+
+                                if (json.ContainsKey("challenge"))
+                                {
+                                    var challenge = json["challenge"]!.ToString();
+                                    RespondPlainText(ref resp, Encoding.UTF8.GetBytes(challenge));
+
+                                    return;
+                                }
+                            }
+                        }
+
+                        var webhook = new TwitchWebhookConsumer(WebhookSecret);
+                        var twitchPayload = webhook.HandleRequest(req.Headers, req.InputStream, req.ContentEncoding);
+
+                        OnTwitchRewardPayload.Invoke(twitchPayload);
+
+                        RespondJSON(ref resp, Ok());
                         return;
                     }
 
@@ -485,9 +530,9 @@ namespace Headless.AtrapalhanciaHandler
             listener = null;
         }
 
-        public static void Run(ITokenDecoder tokenDecoder, WebSocketServer socketServer)
+        public static void Run(ITokenDecoder tokenDecoder, WebSocketServer socketServer, string webhookSecret)
         {
-            using (HttpServer server = new HttpServer(tokenDecoder, socketServer))
+            using (HttpServer server = new HttpServer(tokenDecoder, socketServer, webhookSecret))
             {
                 server.listener = new HttpListener();
                 server.listener.Prefixes.Add(url);

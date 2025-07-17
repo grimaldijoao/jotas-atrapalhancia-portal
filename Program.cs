@@ -1,7 +1,9 @@
 ﻿using AtrapalhanciaDatabase.Tables;
 using Headless.AtrapalhanciaHandler;
 using Headless.Shared;
+using Shared.JSON;
 using Shared.Utils;
+using System.Collections.Concurrent;
 using TwitchHandler;
 
 namespace JotasAtrapalhanciaPortal
@@ -12,6 +14,10 @@ namespace JotasAtrapalhanciaPortal
         private static TwitchAtrapalhanciaBuilder TwitchAtrapalhanciaBuilder = new TwitchAtrapalhanciaBuilder();
         private static WebSocketServerManager SocketManager = new WebSocketServerManager();
 
+        private static ConcurrentDictionary<string, User> TwitchUsers = new ConcurrentDictionary<string, User>();
+
+        private static string TwitchSecret = Guid.NewGuid().ToString();
+
         static void Main(string[] args)
         {
             SocketManager.Initialize();
@@ -20,9 +26,19 @@ namespace JotasAtrapalhanciaPortal
 
             HttpServer.OnGameConnected += HttpServer_OnGameConnected;
 
-            HttpServer.Run(new FirebaseAuthHandler(), SocketManager.SocketServer);
+            HttpServer.OnTwitchRewardPayload += HttpServer_OnTwitchRewardPayload;
+
+            HttpServer.Run(new FirebaseAuthHandler(), SocketManager.SocketServer, TwitchSecret);
 
             Console.ReadLine();
+        }
+
+        private static void HttpServer_OnTwitchRewardPayload(TwitchRewardPayload payload)
+        {
+            if(TwitchListeners.TryGetValue(payload.Event.UserLogin, out var twitchChannel))
+            {
+                twitchChannel.ChatRewardRedeemed(payload);
+            }
         }
 
         private static void HttpServer_OnGameConnected(object? sender, GameConnectedEventArgs args)
@@ -36,7 +52,7 @@ namespace JotasAtrapalhanciaPortal
             {
                 if (!TwitchListeners.TryGetValue(channel, out var twitchConnection))
                 {
-                    twitchConnection = new Twitch(broadcaster_id, channel, access_token);
+                    twitchConnection = new Twitch(broadcaster_id, channel, access_token, TwitchSecret); //TODO salt this secret with broadcaster_id?
 
                     twitchConnection.OnAtrapalhanciaUserCreated += TwitchConnection_OnAtrapalhanciaUserCreated;
 
@@ -110,6 +126,8 @@ namespace JotasAtrapalhanciaPortal
         {
             var twitchListener = (Twitch)sender;
             user.LoadAtrapalhanciaSender((string message) => SocketManager.SocketServer.BroadcastServiceAsync($"{twitchListener.ChannelName}", message));
+
+            TwitchUsers[user.UserName] = user;
         }
     }
 }

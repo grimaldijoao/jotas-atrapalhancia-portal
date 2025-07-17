@@ -1,12 +1,7 @@
 ﻿using Headless.Shared;
-using InvasionHandler;
-using JotasTwitchPortal.JSON;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+using Shared.JSON;
 using Shared.Utils;
 using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Text;
 using TwitchLib.Api;
 using TwitchLib.Api.Core.Exceptions;
 using TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward;
@@ -23,6 +18,7 @@ namespace TwitchHandler
         public string ChannelName { get; private set; }
         private string BroadcasterId;
         private string AccessToken;
+        private string WebhookSecret;
 
         string clientId = "fzrpx1kxpqk3cyklu4uhw9q0mpux2y";
         string bot_access_token = File.ReadAllText("bot_access_token.txt");
@@ -37,11 +33,12 @@ namespace TwitchHandler
 
         public event EventHandler<User> OnAtrapalhanciaUserCreated;
 
-        public Twitch(string broadcaster_id, string channel, string accessToken)
+        public Twitch(string broadcaster_id, string channel, string accessToken, string webhookSecret)
         {
             ChannelName = channel;
             BroadcasterId = broadcaster_id;
             AccessToken = accessToken;
+            WebhookSecret = webhookSecret;
         }
 
         public void Connect()
@@ -69,9 +66,6 @@ namespace TwitchHandler
                 throw new BadRequestException($"Invalid token for {ChannelName}");
             }
 
-            EventSub.AttemptConnection();
-            EventSub.WaitForConnectionAsync().Wait();
-
             client.OnLog += Client_OnLog;
             client.OnUserJoined += Client_OnUserJoined;
             client.OnJoinedChannel += Client_OnJoinedChannel;
@@ -84,14 +78,16 @@ namespace TwitchHandler
                 TimestampedConsole.Log($"BroadcasterId: {BroadcasterId}");
                 TimestampedConsole.Log($"SessionId: {EventSub.SessionId}");
                 TimestampedConsole.Log($"BroadcasterId: {BroadcasterId}");
+
                 var result = api.Helix.EventSub.CreateEventSubSubscriptionAsync(
                     "channel.channel_points_custom_reward_redemption.add",
                     "1",
                     new Dictionary<string, string>() { { "broadcaster_user_id", BroadcasterId } },
-                    TwitchLib.Api.Core.Enums.EventSubTransportMethod.Websocket,
-                    websocketSessionId: EventSub.SessionId,
+                    TwitchLib.Api.Core.Enums.EventSubTransportMethod.Webhook,
+                    webhookCallback: "https://api.atrapalhancias.com.br/twitch-reward-eventsub",
+                    webhookSecret: WebhookSecret,
                     clientId: clientId,
-                    accessToken: AccessToken
+                    accessToken: "5skyaa9r4x8nxw0ikr9303o9pv5c3f"
                 ).GetAwaiter().GetResult();
 
                 TimestampedConsole.Log($"Subscriptions length: {result.Subscriptions.Length}");
@@ -103,12 +99,11 @@ namespace TwitchHandler
                 TimestampedConsole.Log($"💥 Exception during EventSub subscription: {ex.Message}");
             }
 
-            EventSub.RegisterChannel(ChannelName, EventSub_OnChatRewardRedeemed);
-
             TimestampedConsole.Log($"{ChannelName} connected!");
         }
 
-        private void EventSub_OnChatRewardRedeemed(RewardEvent rewardEvent)
+        //TODO better wiring
+        public void ChatRewardRedeemed(TwitchRewardPayload rewardEvent)
         {
             string atrapalhancia;
             User user;

@@ -1,6 +1,6 @@
-﻿using JotasTwitchPortal.JSON;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Shared.JSON;
 using Shared.Utils;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
@@ -22,9 +22,9 @@ namespace TwitchHandler
         public JObject payload { get; set; }
     }
 
-    public static class EventSub
+    public class EventSub
     {
-        private static readonly ConcurrentDictionary<string, Action<RewardEvent>> chatRewardRedeemEvents = new ConcurrentDictionary<string, Action<RewardEvent>>();
+        private static readonly ConcurrentDictionary<string, Action<TwitchRewardPayload>> chatRewardRedeemEvents = new ConcurrentDictionary<string, Action<TwitchRewardPayload>>();
 
         private static readonly object connectionAttemptLock = new object();
         private static Task? connectionLoop;
@@ -52,7 +52,7 @@ namespace TwitchHandler
             return connectionEstablishCompleted.Task;
         }
 
-        public static void RegisterChannel(string channelName, Action<RewardEvent> onChatRewardRedeemed)
+        public static void RegisterChannel(string channelName, Action<TwitchRewardPayload> onChatRewardRedeemed)
         {
             chatRewardRedeemEvents[channelName] = onChatRewardRedeemed;
             Console.WriteLine($"Registered {channelName} eventsub");
@@ -97,7 +97,7 @@ namespace TwitchHandler
                             else if (message.metadata.message_type == "notification" &&
                                      message.metadata.subscription_type == "channel.channel_points_custom_reward_redemption.add")
                             {
-                                var redeem = JsonConvert.DeserializeObject<RewardEvent>(message.payload.ToString());
+                                var redeem = JsonConvert.DeserializeObject<TwitchRewardPayload>(message.payload.ToString());
                                 if (redeem != null && chatRewardRedeemEvents.TryGetValue(redeem.Event.BroadcasterUserLogin, out var eventCaller))
                                 {
                                     TimestampedConsole.Log($"Mandando redeem pro {redeem.Event.BroadcasterUserLogin} - {redeem.Event.Reward.Title}");
