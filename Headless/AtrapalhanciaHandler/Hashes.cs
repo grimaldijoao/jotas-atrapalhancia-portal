@@ -20,7 +20,8 @@ namespace AtrapalhanciaHandler
             { "D737E90D91DBA8620FD5C2985EB6FF2CDA7F23F9", "DonkeyKongCountry3.dll" },
             { "09C094CA1114BCB6D5917E989686CA79B96CF9EA", "UltimateMortalKombat3.dll" },
             { "shared", "Shared.dll" },
-            { "0CB115D8716DBBC2922FDA38E533B9FE63BB9670", "DiddyKongRacing.dll" }
+            { "0CB115D8716DBBC2922FDA38E533B9FE63BB9670", "DiddyKongRacing.dll" },
+            { "77747840541BFC62A28A5957692A98C550BD6B2B", "Tetris.dll" }
         };
     }
 }
