@@ -258,6 +258,11 @@ namespace TwitchHandler
             {
                 ConnectedUsers[e.ChatMessage.Username].Atrapalhate(e.ChatMessage.Channel, "jump");
             }
+
+            if(e.ChatMessage.Message.StartsWith("!emblema"))
+            {
+                SendChatMessage("Código: jotaswinstetris");
+            }
         }
 
         private void Client_OnUserJoined(object sender, OnUserJoinedArgs e)
