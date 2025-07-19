@@ -196,8 +196,6 @@ namespace Headless.AtrapalhanciaHandler
                         if(req.Url.ToString().Contains(bannedHost, StringComparison.OrdinalIgnoreCase))
                         {
                             resp.StatusCode = 403;
-                            byte[] buffer = Encoding.UTF8.GetBytes("Forbidden - you will be held accountable in the court of law if you keep going.");
-                            resp.OutputStream.Write(buffer, 0, buffer.Length);
                             resp.Close();
                             return;
                         }

@@ -12,6 +12,7 @@ namespace AtrapalhanciaDatabase.Tables
                     broadcaster_id TEXT UNIQUE NOT NULL,
                     access_token TEXT,
                     refresh_token TEXT,
+                    subscription_id TEXT,
                     channel_name TEXT UNIQUE NOT NULL
                 );
             ";
@@ -66,6 +67,7 @@ namespace AtrapalhanciaDatabase.Tables
                     twitchRelation.BroadcasterId = reader.GetString(reader.GetOrdinal("broadcaster_id"));
                     twitchRelation.ChannelName = reader.GetString(reader.GetOrdinal("channel_name"));
                     twitchRelation.AccessToken = reader.GetNullableString("access_token");
+                    twitchRelation.SubscriptionId = reader.GetNullableString("subscription_id");
                     twitchRelation.RefreshToken = reader.GetNullableString("refresh_token");
 
                 }
@@ -104,10 +106,45 @@ namespace AtrapalhanciaDatabase.Tables
             return null;
         }
 
+        public static void UpdateSubscriptionId(string broadcasterId, string subscriptionId)
+        {
+            SQLite.WithConnection((conn) =>
+            {
+                using var cmd = new SQLiteCommand(@"
+                    UPDATE Twitch_Relation
+                    SET subscription_id = @subscription_id
+                    WHERE broadcaster_id = @broadcaster_id;
+                ", conn);
+
+                cmd.Parameters.AddWithValue("subscription_id", subscriptionId);
+                cmd.Parameters.AddWithValue("broadcaster_id", broadcasterId);
+
+                cmd.ExecuteNonQuery();
+            });
+        }
+
+        public static string? GetSubscriptionId(string broadcasterId)
+        {
+            return SQLite.WithConnection((conn) =>
+            {
+                using var cmd = new SQLiteCommand(@"
+                    SELECT subscription_id
+                    FROM Twitch_Relation
+                    WHERE broadcaster_id = @broadcaster_id;
+                ", conn);
+
+                cmd.Parameters.AddWithValue("broadcaster_id", broadcasterId);
+
+                var result = cmd.ExecuteScalar();
+                return result != DBNull.Value ? result?.ToString() : null;
+            });
+        }
+
         public int Id { get; private set; }
 
         public string? AccessToken { get; private set; }
         public string? RefreshToken { get; private set; }
+        public string? SubscriptionId { get; private set; }
 
         public string BroadcasterId { get; private set; } = null!;
         public string ChannelName { get; private set; } = null!;

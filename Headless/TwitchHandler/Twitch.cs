@@ -1,7 +1,10 @@
 ﻿using Headless.Shared;
+using Newtonsoft.Json;
 using Shared.JSON;
 using Shared.Utils;
+using System;
 using System.Collections.Concurrent;
+using System.Text.Json.Serialization;
 using TwitchLib.Api;
 using TwitchLib.Api.Core.Exceptions;
 using TwitchLib.Api.Helix.Models.ChannelPoints.CreateCustomReward;
@@ -22,7 +25,7 @@ namespace TwitchHandler
 
         string clientId = "fzrpx1kxpqk3cyklu4uhw9q0mpux2y";
         string bot_access_token = File.ReadAllText("bot_access_token.txt");
-        string? rewardSubscriptionId;
+        string client_secret = File.ReadAllText("client_secret.txt");
 
         TwitchClient client;
         TwitchAPI api;
@@ -30,6 +33,8 @@ namespace TwitchHandler
         private Dictionary<string, CreateCustomRewardsRequest> CurrentRewards = new Dictionary<string, CreateCustomRewardsRequest>();
 
         private Dictionary<string, User> ConnectedUsers = new Dictionary<string, User>();
+
+        private EventSub EventSubProvider;
 
         public event EventHandler<User> OnAtrapalhanciaUserCreated;
 
@@ -39,6 +44,8 @@ namespace TwitchHandler
             BroadcasterId = broadcaster_id;
             AccessToken = accessToken;
             WebhookSecret = webhookSecret;
+
+            EventSubProvider = new EventSub(clientId, client_secret, webhookSecret, broadcaster_id, channel);
         }
 
         public void Connect()
@@ -75,28 +82,12 @@ namespace TwitchHandler
 
             try
             {
-                TimestampedConsole.Log($"BroadcasterId: {BroadcasterId}");
-                TimestampedConsole.Log($"SessionId: {EventSub.SessionId}");
-                TimestampedConsole.Log($"BroadcasterId: {BroadcasterId}");
-
-                var result = api.Helix.EventSub.CreateEventSubSubscriptionAsync(
-                    "channel.channel_points_custom_reward_redemption.add",
-                    "1",
-                    new Dictionary<string, string>() { { "broadcaster_user_id", BroadcasterId } },
-                    TwitchLib.Api.Core.Enums.EventSubTransportMethod.Webhook,
-                    webhookCallback: "https://api.atrapalhancias.com.br/twitch-reward-eventsub",
-                    webhookSecret: WebhookSecret,
-                    clientId: clientId,
-                    accessToken: "5skyaa9r4x8nxw0ikr9303o9pv5c3f"
-                ).GetAwaiter().GetResult();
-
-                TimestampedConsole.Log($"Subscriptions length: {result.Subscriptions.Length}");
-
-                rewardSubscriptionId = result.Subscriptions.First().Id;
+                EventSubProvider.RegisterChannel();
             }
             catch (Exception ex)
             {
                 TimestampedConsole.Log($"💥 Exception during EventSub subscription: {ex.Message}");
+                EventSubProvider.RegisterWithCleanup();
             }
 
             TimestampedConsole.Log($"{ChannelName} connected!");
@@ -276,12 +267,7 @@ namespace TwitchHandler
 
         public void Dispose()
         {
-            EventSub.RemoveChannel(ChannelName);
-            
-            if(rewardSubscriptionId != null)
-            {
-                api.Helix.EventSub.DeleteEventSubSubscriptionAsync(rewardSubscriptionId, clientId, AccessToken);
-            }
+            EventSubProvider.RemoveChannel();
 
             DeleteRedeemRewards();
 

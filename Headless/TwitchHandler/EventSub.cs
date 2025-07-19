@@ -1,123 +1,179 @@
-﻿using Newtonsoft.Json;
+﻿using AtrapalhanciaDatabase.Tables;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Shared.JSON;
 using Shared.Utils;
-using System.Collections.Concurrent;
-using System.Net.WebSockets;
+using System.Net;
 using System.Text;
 
 namespace TwitchHandler
 {
-    public class TwitchMessage
-    {
-        public class Metadata
-        {
-            public string message_id { get; set; }
-            public string message_type { get; set; }
-            public string message_timestamp { get; set; }
-            public string subscription_type { get; set; }
-        }
-
-        public Metadata metadata { get; set; }
-        public JObject payload { get; set; }
-    }
-
     public class EventSub
     {
-        private static readonly ConcurrentDictionary<string, Action<TwitchRewardPayload>> chatRewardRedeemEvents = new ConcurrentDictionary<string, Action<TwitchRewardPayload>>();
+        private const string callbackUrl = "https://api.atrapalhancias.com.br/twitch-reward-eventsub/";
 
-        private static readonly object connectionAttemptLock = new object();
-        private static Task? connectionLoop;
+        private string clientId;
+        private string clientSecret;
+        private string webHookSecret;
+        private string broadcasterId;
+        private string channelName;
 
-        private static TaskCompletionSource<bool> connectionEstablishCompleted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        private string? subscriptionId;
 
-        public static string? SessionId { get; private set; }
-
-        public static void AttemptConnection()
+        public EventSub(string clientId, string clientSecret, string webHookSecret, string broadcasterId, string channelName)
         {
-            lock (connectionAttemptLock)
+            this.clientId = clientId;
+            this.clientSecret = clientSecret;
+            this.webHookSecret = webHookSecret;
+            this.broadcasterId = broadcasterId;
+            this.channelName = channelName;
+
+            subscriptionId = TwitchRelation.GetSubscriptionId(broadcasterId);
+        }
+
+        public string? GetAppToken()
+        {
+            var client = new HttpClient();
+
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://id.twitch.tv/oauth2/token");
+
+            var collection = new List<KeyValuePair<string, string>>();
+
+            collection.Add(new("client_id", clientId));
+            collection.Add(new("client_secret", clientSecret));
+            collection.Add(new("grant_type", "client_credentials"));
+
+            object content = new FormUrlEncodedContent(collection);
+            request.Content = (FormUrlEncodedContent)content;
+
+            var response = client.SendAsync(request).GetAwaiter().GetResult();
+            var result = new StreamReader(response.Content.ReadAsStream()).ReadToEnd();
+
+            return JsonConvert.DeserializeObject<JObject>(result)?.GetValue("access_token")?.Value<string>();
+        }
+
+        public void RegisterWithCleanup()
+        {
+            var appToken = GetAppToken();
+
+            if (appToken == null)
             {
-                if (connectionLoop == null || connectionLoop.IsCompleted)
-                {
-                    connectionLoop = Task.Run(() =>
-                    {
-                        return EstablishConnectionAsync();
-                    });
-                }
+                throw new ArgumentNullException("Failed to get app token");
             }
+
+            var client = new HttpClient();
+
+            var request = new HttpRequestMessage(HttpMethod.Get, "https://api.twitch.tv/helix/eventsub/subscriptions");
+            request.Headers.Add("Authorization", $"Bearer {appToken}");
+            request.Headers.Add("Client-Id", clientId);
+
+            var response = client.SendAsync(request).GetAwaiter().GetResult();
+
+            var json = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+
+            var obj = JObject.Parse(json);
+            var match = obj["data"]?
+                .FirstOrDefault(d => (string?)d["transport"]?["callback"] == callbackUrl);
+
+            string? id = (string?)match?["id"];
+
+            if(id != null)
+            {
+                client = new HttpClient();
+                
+                request = new HttpRequestMessage(HttpMethod.Delete, $"https://api.twitch.tv/helix/eventsub/subscriptions?id={id}");
+                request.Headers.Add("Authorization", $"Bearer {appToken}");
+                request.Headers.Add("Client-Id", clientId);
+
+                response = client.SendAsync(request).GetAwaiter().GetResult();
+                response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+
+                if(response.StatusCode != HttpStatusCode.NoContent)
+                {
+                    TimestampedConsole.Log($"Tried to clean {channelName} subscription but DELETE failed");
+                }
+                else
+                {
+                    RegisterChannel();
+                }
+
+            }
+            else
+            {
+                TimestampedConsole.Log($"Tried to clean {channelName} subscription but found no matching id");
+            }
+
         }
 
-        public static Task WaitForConnectionAsync()
+        public void RegisterChannel()
         {
-            return connectionEstablishCompleted.Task;
-        }
+            if(subscriptionId != null)
+            {
+                RemoveChannel();
+            }
 
-        public static void RegisterChannel(string channelName, Action<TwitchRewardPayload> onChatRewardRedeemed)
-        {
-            chatRewardRedeemEvents[channelName] = onChatRewardRedeemed;
+            var appToken = GetAppToken();
+
+            if (appToken == null)
+            {
+                throw new ArgumentNullException("Failed to get app token");
+            }
+
+            var client = new HttpClient();
+
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://api.twitch.tv/helix/eventsub/subscriptions");
+            request.Headers.Add("Client-Id", clientId);
+            request.Headers.Add("Authorization", $"Bearer {appToken}");
+            var content = JsonConvert.SerializeObject(new
+            {
+                type = "channel.channel_points_custom_reward_redemption.add",
+                version = "1",
+                condition = new { broadcaster_user_id = broadcasterId },
+                transport = new
+                {
+                    method = "webhook",
+                    callback = callbackUrl,
+                    secret = webHookSecret
+                }
+            });
+            request.Content = new StringContent((string)content, Encoding.UTF8, "application/json");
+
+            var response = client.SendAsync(request).GetAwaiter().GetResult();
+            
+            if(response.StatusCode == HttpStatusCode.Conflict)
+            {
+                throw new HttpRequestException("Subscription for this channel and endpoint already exists");
+            }
+            
+            response.EnsureSuccessStatusCode();
+
+            var result = new StreamReader(response.Content.ReadAsStream()).ReadToEnd();
+
+            TimestampedConsole.Log(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
+
+            var json = JObject.Parse(result);
+            string? responseSubscriptionId = json["data"]?[0]?["id"]?.ToString();
+
+            if (responseSubscriptionId == null)
+            {
+                throw new ArgumentNullException("Failed to create subscription (or get subscription id)");
+            }
+
+            subscriptionId = responseSubscriptionId;
+
+            TwitchRelation.UpdateSubscriptionId(broadcasterId, subscriptionId);
+
             Console.WriteLine($"Registered {channelName} eventsub");
         }
 
-        public static void RemoveChannel(string channelName)
+        public void RemoveChannel()
         {
-            chatRewardRedeemEvents.TryRemove(channelName, out _);
-            Console.WriteLine($"Removing {channelName} eventsub");
-        }
-
-        private static async Task EstablishConnectionAsync()
-        {
-            using (var webSocketClient = new ClientWebSocket())
+            if(subscriptionId != null)
             {
-                try
-                {
-                    TimestampedConsole.Log("Connecting to EventSub...");
-                    await webSocketClient.ConnectAsync(new Uri("wss://eventsub.wss.twitch.tv/ws"), CancellationToken.None);
-
-                    var buffer = new byte[4096];
-                    while (webSocketClient.State == WebSocketState.Open)
-                    {
-                        var result = await webSocketClient.ReceiveAsync(buffer, CancellationToken.None);
-                        if (result.MessageType == WebSocketMessageType.Close)
-                        {
-                            await webSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
-                        }
-                        else
-                        {
-                            var json = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                            TimestampedConsole.Log($"EventSub Event {json}");
-                            if (string.IsNullOrWhiteSpace(json)) continue;
-
-                            var message = JsonConvert.DeserializeObject<TwitchMessage>(json);
-                            if (message?.metadata?.message_type == "session_welcome")
-                            {
-                                SessionId = message.payload["session"]?.Value<string>("id");
-                                TimestampedConsole.Log("EventSub connected with session ID: " + SessionId);
-                                connectionEstablishCompleted.TrySetResult(true);
-                            }
-                            else if (message.metadata.message_type == "notification" &&
-                                     message.metadata.subscription_type == "channel.channel_points_custom_reward_redemption.add")
-                            {
-                                var redeem = JsonConvert.DeserializeObject<TwitchRewardPayload>(message.payload.ToString());
-                                if (redeem != null && chatRewardRedeemEvents.TryGetValue(redeem.Event.BroadcasterUserLogin, out var eventCaller))
-                                {
-                                    TimestampedConsole.Log($"Mandando redeem pro {redeem.Event.BroadcasterUserLogin} - {redeem.Event.Reward.Title}");
-                                    eventCaller(redeem);
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    TimestampedConsole.Log($"EventSub connection error: {ex.Message}");
-                }
-                finally
-                {
-                    SessionId = null;
-                    TimestampedConsole.Log("EventSub connection lost. Waiting for reconnection...");
-                    connectionEstablishCompleted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                    //? Invoke some event to warn the consumer that the global websocket connection was lost, so that it can (optionally) re-try to connect (and then trigger the eventsub http subscribe request)
-                }
+                Console.WriteLine($"Removing {channelName} eventsub");
+            }
+            else
+            {
+                Console.WriteLine($"Trying to remove subscription that has not been registered for {channelName}!");
             }
         }
     }   

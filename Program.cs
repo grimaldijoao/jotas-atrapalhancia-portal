@@ -1,6 +1,7 @@
 ﻿using AtrapalhanciaDatabase.Tables;
 using Headless.AtrapalhanciaHandler;
 using Headless.Shared;
+using Newtonsoft.Json;
 using Shared.JSON;
 using Shared.Utils;
 using System.Collections.Concurrent;
@@ -35,6 +36,7 @@ namespace JotasAtrapalhanciaPortal
 
         private static void HttpServer_OnTwitchRewardPayload(TwitchRewardPayload payload)
         {
+            TimestampedConsole.Log($"Incoming reward: {JsonConvert.SerializeObject(payload)}");
             if(TwitchListeners.TryGetValue(payload.Event.UserLogin, out var twitchChannel))
             {
                 twitchChannel.ChatRewardRedeemed(payload);
