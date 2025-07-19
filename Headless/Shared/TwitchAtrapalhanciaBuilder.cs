@@ -12,7 +12,12 @@ namespace Headless.Shared
 
             foreach (MethodInfo mi in taskMethodInfos)
             {
-                rewards.Add(mi.Name.ToLower(), new CreateCustomRewardsRequest { Title = mi.CustomAttributes.First().ConstructorArguments[0].Value.ToString(), Cost = Convert.ToInt32(mi.CustomAttributes.First().ConstructorArguments[1].Value), BackgroundColor = "#2C2C2C", IsEnabled = true });
+                rewards.Add(mi.Name.ToLower(), new CreateCustomRewardsRequest {
+                    Title = mi.CustomAttributes.First().ConstructorArguments[0].Value.ToString(),
+                    Cost = Convert.ToInt32(mi.CustomAttributes.First().ConstructorArguments[1].Value),
+                    BackgroundColor = "#0AE6BB",
+                    IsEnabled = true
+                });
             }
 
             return rewards;
