@@ -37,7 +37,7 @@ namespace JotasAtrapalhanciaPortal
         private static void HttpServer_OnTwitchRewardPayload(TwitchRewardPayload payload)
         {
             TimestampedConsole.Log($"Incoming reward: {JsonConvert.SerializeObject(payload)}");
-            if(TwitchListeners.TryGetValue(payload.Event.UserLogin, out var twitchChannel))
+            if(TwitchListeners.TryGetValue(payload.Event.BroadcasterUserLogin, out var twitchChannel))
             {
                 twitchChannel.ChatRewardRedeemed(payload);
             }
