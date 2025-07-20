@@ -263,6 +263,19 @@ namespace TwitchHandler
             {
                 SendChatMessage("Código: jotaswinstetris");
             }
+            
+            if(e.ChatMessage.Message.StartsWith("!resgatar") && e.ChatMessage.Message.Contains("jotaswintetris"))
+            {
+                SendChatMessage("Emblema resgatado... em nossos corações 🙏");
+            }
+
+            if (e.ChatMessage.Message.StartsWith("!abacaxistart") && e.ChatMessage.Username == "umjotas")
+            {
+                Task.Factory.StartNew(() =>
+                {
+                   //
+                });
+            }
         }
 
         private void Client_OnUserJoined(object sender, OnUserJoinedArgs e)
