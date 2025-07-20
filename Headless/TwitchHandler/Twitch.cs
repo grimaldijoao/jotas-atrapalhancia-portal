@@ -282,16 +282,18 @@ namespace TwitchHandler
                     abacaxiEnabled = true;
                     SendChatMessage($"🍍 começou o ABACAXI!!! 🍍 o primeiro à mandar !abacaxi vai ganhar {points} abacapoints");
 
-                    Task.Delay(5000).Wait();
+                    Task.Delay(10000).Wait();
                     abacaxiEnabled = false;
                     SendChatMessage("Acabou o abacaxi!");
                 });
             }
-
-            if (e.ChatMessage.Message.StartsWith("!abacaxi"))
+            else if (e.ChatMessage.Message.StartsWith("!abacaxi"))
             {
+                if(abacaxiEnabled)
+                {
                     SendChatMessage($"{e.ChatMessage.Username} ganhou abacapoints!");
                     abacaxiEnabled = false;
+                }
             }
         }
 
