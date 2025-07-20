@@ -38,6 +38,8 @@ namespace TwitchHandler
 
         public event EventHandler<User> OnAtrapalhanciaUserCreated;
 
+        private Random random = new Random();
+
         public Twitch(string broadcaster_id, string channel, string accessToken, string webhookSecret)
         {
             ChannelName = channel;
@@ -251,6 +253,8 @@ namespace TwitchHandler
             SendChatMessage("🤖🤝👽", (TwitchClient)sender);
         }
 
+        private bool abacaxiEnabled = false;
+
         private void Client_OnMessageReceived(object sender, OnMessageReceivedArgs e)
         {
             TryFirstJoin(e.ChatMessage.Username);
@@ -273,8 +277,21 @@ namespace TwitchHandler
             {
                 Task.Factory.StartNew(() =>
                 {
-                   //
+                    Task.Delay(random.Next(1000, 9000)).Wait();
+                    var points = random.Next(10, 500);
+                    abacaxiEnabled = true;
+                    SendChatMessage($"🍍 começou o ABACAXI!!! 🍍 o primeiro à mandar !abacaxi vai ganhar {points} abacapoints");
+
+                    Task.Delay(5000).Wait();
+                    abacaxiEnabled = false;
+                    SendChatMessage("Acabou o abacaxi!");
                 });
+            }
+
+            if (e.ChatMessage.Message.StartsWith("!abacaxi"))
+            {
+                    SendChatMessage($"{e.ChatMessage.Username} ganhou abacapoints!");
+                    abacaxiEnabled = false;
             }
         }
 
